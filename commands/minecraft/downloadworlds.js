@@ -2,7 +2,7 @@ import { SlashCommandBuilder, EmbedBuilder } from "discord.js"
 
 export const data = new SlashCommandBuilder()
 .setName('download-worlds')
-.setDescription('Despliega un menú para descargar los mapas de viejos servidores de Minecraft.')
+.setDescription('Muestra un menú para descargar los mapas de viejos servidores de Minecraft.')
 
 export function run(client, interaction) {
   if (interaction.guildId == '846586184963981322') {
