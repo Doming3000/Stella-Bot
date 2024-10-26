@@ -29,7 +29,8 @@ async function loadCommands() {
     
     for (const file of commandFiles) {
       const command = await import(`./commands/${dir}/${file}`);
-      commandsData.push(command.data.toJSON()); // Convertir el comando a JSON
+      // Convertir el comando a JSON
+      commandsData.push(command.data.toJSON());
     }
   }
   
@@ -43,7 +44,8 @@ async function registerGlobalCommands(commandsData) {
   try {
     console.log('Registrando comandos globales...');
     await rest.put(
-      Routes.applicationCommands(clientId), // Registrar comandos globales
+      // Registrar comandos globales
+      Routes.applicationCommands(clientId),
       { body: commandsData }
     );
     console.log('Comandos globales registrados con éxito.');
@@ -63,6 +65,6 @@ client.login(token).then(async () => {
   } catch (error) {
     console.error('Error durante el proceso de registro de comandos:', error);
   } finally {
-    client.destroy(); // Cerrar sesión del cliente después de registrar comandos
+    client.destroy();
   }
 });
