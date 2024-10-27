@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { readFileSync } from 'fs';
 
-dotenv.config();
+// Leer configuración desde config.json
+const config = JSON.parse(readFileSync('./config.json'));
 
-// Definición de la función para conectar a la base de datos
-export function connectToDatabase() {
-  mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Conexión exitosa a MongoDB'))
-  .catch((error) => console.error('Error al conectar a MongoDB:', error));
+// Función de conexión a MongoDB
+export async function databaseConnect() {
+  try {
+    await mongoose.connect(config.mongopass);
+    console.log('🟢 La base de datos esta conectada.');
+  } catch (error) {
+    console.error('🔴 Ha ocurido un error al conectar con la base de datos', error);
+  }
 }
