@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { connectToDatabase } from './database.js';
 import { readdirSync, readFileSync } from "fs";
 import { pathToFileURL } from "url";
 import path from "path";
@@ -71,3 +72,4 @@ function loadEvents() {
 // Llamada a las funciones de carga
 loadCommands();
 loadEvents();
+connectToDatabase();
