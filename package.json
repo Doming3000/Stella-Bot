@@ -15,6 +15,7 @@
     "dotenv": "^16.4.5",
     "fs": "^0.0.1-security",
     "mongoose": "^8.7.3",
+    "node_characterai": "^1.2.7",
     "request": "^2.88.2"
   },
   "type": "module"
