@@ -43,8 +43,8 @@ async function run(client, interaction) {
   .setTitle("🔎 Información de la aplicación:")
   .setDescription(`**¡Hola!**\nSoy una aplicación privada diseñada para servidores de confianza.\nFui puesta en línea <t:${uptime}:R> y cuento con **${commandCount}** comandos.`)
   .addFields(
-    { name: "📚 - Versiones", value: `➜ <:Discord:1013285425412046929> **Discord.js**: \`${discordVersion}\`\n➜ <:Nodejs:1013283193484484608> **Node.js**: \`${nodeVersion}\``, inline: true },
-    { name: "📃 - Información Adicional:", value: "➜ <:Code:1299227551180259350> Programado con **Javascript**\n➜ :technologist: Desarollado por: <@811071747189112852>", inline: true }
+    { name: "📚 - Versiones", value: `➜ <:Discord:1302057111550824561> **Discord.js**: \`${discordVersion}\`\n➜ <:Nodejs:1302056618971889757> **Node.js**: \`${nodeVersion}\``, inline: true },
+    { name: "📃 - Información Adicional:", value: "➜ <:Javascript:1302106857724448872> Programado con **Javascript**\n➜ :technologist: Desarollado por: <@811071747189112852>", inline: true }
   );
   
   await interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } });

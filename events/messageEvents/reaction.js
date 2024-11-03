@@ -4,13 +4,13 @@ export async function handleMessage(message) {
   
   const content = message.content.toLowerCase();
   
-  // Reacciona con emoji custom
-  if (content.includes("test1")) {
+  // Reaccion con un emoji custom
+  if (content.includes("porno")) {
     await message.react('<:SmugVanilla:1301622187350036581>');
   }
   
-  // Reacciona con un emoji de carita triste
-  else if (content.includes("test2")) {
-    await message.react("😢");
-  }
+  // Otra reacción con un emoji preterminado
+  // else if (content.includes("test")) {
+  //   await message.react("😢");
+  // }
 }

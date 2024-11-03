@@ -17,7 +17,7 @@ export function run(client, interaction) {
   const roleMentionPattern = /<@&\d+>/;
   
   if (contenido.includes('@everyone') || contenido.includes('@here') || roleMentionPattern.test(contenido)) {
-    interaction.reply({ content: '<:Advertencia:1009954893471162470> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', ephemeral: true });
+    interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', ephemeral: true });
   }
   
   else {

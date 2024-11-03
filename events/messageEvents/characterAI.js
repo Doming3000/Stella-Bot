@@ -31,7 +31,7 @@ export async function handleMessage(message) {
     const responseText = await getCharacterResponse(message.author.id, msgText);
     message.reply({ content: responseText, allowedMentions: { repliedUser: false }});
   } catch (error) {
-    message.reply({ content: "<:Advertencia:1009954893471162470> Ha ocurrido un error al procesar el mensaje.", allowedMentions: { repliedUser: false }});
+    message.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al procesar el mensaje.", allowedMentions: { repliedUser: false }});
   }
 }
 

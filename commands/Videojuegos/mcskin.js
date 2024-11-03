@@ -15,7 +15,7 @@ export function run(client, interaction) {
   
   const caracteres = nombre.length;
   if (caracteres > 16) {
-    interaction.reply({ content: "<:Advertencia:1009954893471162470> El nombre de este jugador sobrepasa los 16 caracteres.", ephemeral: true, allowedMentions: { repliedUser: false }});
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> El nombre de este jugador sobrepasa los 16 caracteres.", ephemeral: true, allowedMentions: { repliedUser: false }});
     return;
   }
   
@@ -23,7 +23,7 @@ export function run(client, interaction) {
   request(mojang_player_api, function (err, resp, body) {
     // Si hay un error con la solicitud, enviar un mensaje de error.
     if (err) {
-      interaction.reply({ content: "<:Advertencia:1009954893471162470> Ocurrió un error al consultar la API.", ephemeral: true, allowedMentions: { repliedUser: false }});
+      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ocurrió un error al consultar la API.", ephemeral: true, allowedMentions: { repliedUser: false }});
       return;
     }
     
@@ -32,7 +32,7 @@ export function run(client, interaction) {
       
       // Verificar si el jugador no existe
       if (!body || !body.id) {
-        interaction.reply({ content: "<:Advertencia:1009954893471162470> No he podido encontrar al jugador.", ephemeral: true, allowedMentions: { repliedUser: false }});
+        interaction.reply({ content: "<:Advertencia:1302055825053057084> No he podido encontrar al jugador.", ephemeral: true, allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -48,13 +48,13 @@ export function run(client, interaction) {
         iconURL: client.user.displayAvatarURL()
       })
       .setTitle(`Skin del jugador: ${body.name}`)
-      .setDescription(`<:Archivo:1010183980315840562> [Ver skin](${skin})`)
+      .setDescription(`<:Imagen:1302064339829653535> [Abrir en el navegador](${skin})`)
       .setImage(render)
       .setThumbnail(avatar);
       
       interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } });
     } catch (err) {
-      interaction.reply({ content: "<:Advertencia:1009954893471162470> No he podido encontrar al jugador.", ephemeral: true, allowedMentions: { repliedUser: false }});
+      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});
     }
   });
 }
