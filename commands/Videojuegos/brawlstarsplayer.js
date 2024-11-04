@@ -59,14 +59,14 @@ export async function run(client, interaction) {
       .setTitle(`Estadísticas del jugador: ${body.name}`)
       .addFields(
         { name: ':hash: Tag', value: `${body.tag}`, inline: true },
-        { name: '<:BSTrophy:1302094440957083688> Trofeos totales', value: `${body.trophies}`, inline: true },
-        { name: '<:BSTrophy:1302094440957083688> Récord de trofeos', value: `${body.highestTrophies}`, inline: true },
+        { name: ':trophy: Trofeos totales', value: `${body.trophies}`, inline: true },
+        { name: ':trophy: Récord de trofeos', value: `${body.highestTrophies}`, inline: true },
         { name: ':first_place: Victorias en solitario', value: `${body.soloVictories}`, inline: true },
-        { name: ':first_place: Victorias a dúo', value: `${body.duoVictories}`, inline: true },
-        { name: ':first_place: Victorias 3vs3', value: `${body["3vs3Victories"]}`, inline: true },
+        { name: ':second_place: Victorias a dúo', value: `${body.duoVictories}`, inline: true },
+        { name: ':third_place: Victorias 3vs3', value: `${body["3vs3Victories"]}`, inline: true },
         { name: ':shield: Club', value: `${body.club && body.club.name ? body.club.name : "*Sin club*"}`, inline: true },
       )
-      .setThumbnail(playerIconUrl); 
+      .setThumbnail(playerIconUrl);
       
       // Botones
       const actionRow = new ActionRowBuilder()
