@@ -9,20 +9,29 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
-export function run(client, interaction) {
+// Función auxiliar para enviar la confirmación de mensaje y eliminarla después de un tiempo
+async function sendConfirmation(interaction, message = 'Mensaje enviado!') {
+  const reply = await interaction.reply({ content: message, ephemeral: true });
+  
+  // Eliminar la confirmación después de 3 segundos
+  setTimeout(() => reply.delete(), 3000);
+}
+
+export async function run(client, interaction) {
   const contenido = interaction.options.getString('contenido');
-  const channel = interaction.channel;
   
-  // Comprobar si el contenido incluye @everyone, @here o menciones de roles <@&roleID>
-  const roleMentionPattern = /<@&\d+>/;
-  
-  if (contenido.includes('@everyone') || contenido.includes('@here') || roleMentionPattern.test(contenido)) {
-    interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', ephemeral: true });
-  }
-  
-  else {
-    // Responder al usuario y enviar mensaje al canal
-    interaction.reply({ content: 'Mensaje enviado', ephemeral: true });
-    channel.send({ content: `${contenido}` });
+  // Comprobar si existe un canal de interacción; si no, se asume que es un mensaje directo
+  if (!interaction.channel) {
+    sendConfirmation(interaction);
+    interaction.user.send({ content: contenido });
+  } else {
+    // Verificar si el contenido incluye menciones masivas
+    const roleMentionPattern = /<@&\d+>/;
+    if (contenido.includes('@everyone') || contenido.includes('@here') || roleMentionPattern.test(contenido)) {
+      await interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', ephemeral: true });
+    } else {
+      sendConfirmation(interaction);
+      interaction.channel.send({ content: contenido });
+    }
   }
 }

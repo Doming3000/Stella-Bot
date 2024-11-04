@@ -116,7 +116,7 @@ export async function run(client, interaction) {
             iconURL: client.user.displayAvatarURL()
           })
           .setTitle(`Estadisticas adicionales de ${body.name}`)
-                    
+          
           await i.reply({ embeds: [moredataEmbed], ephemeral: false });
         }
       });

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
 import request from "request";
 
 export const data = new SlashCommandBuilder()
@@ -12,14 +12,15 @@ export const data = new SlashCommandBuilder()
 
 export function run(client, interaction) {
   const nombre = interaction.options.getString('nombre');
-  
   const caracteres = nombre.length;
+
   if (caracteres > 16) {
     interaction.reply({ content: "<:Advertencia:1302055825053057084> El nombre de este jugador sobrepasa los 16 caracteres.", ephemeral: true, allowedMentions: { repliedUser: false }});
     return;
   }
   
   let mojang_player_api = `https://api.mojang.com/users/profiles/minecraft/${nombre}`;
+  
   request(mojang_player_api, function (err, resp, body) {
     // Si hay un error con la solicitud, enviar un mensaje de error.
     if (err) {
@@ -48,11 +49,19 @@ export function run(client, interaction) {
         iconURL: client.user.displayAvatarURL()
       })
       .setTitle(`Skin del jugador: ${body.name}`)
-      .setDescription(`<:Imagen:1302064339829653535> [Abrir en el navegador](${skin})`)
       .setImage(render)
       .setThumbnail(avatar);
       
-      interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } });
+      const actionRow = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+        .setEmoji("<:Imagen:1302064339829653535>")
+        .setLabel("Abrir en el navegador")
+        .setURL(`${skin}`)
+        .setStyle("Link")
+      );
+      
+      interaction.reply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false } });
     } catch (err) {
       interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});
     }
