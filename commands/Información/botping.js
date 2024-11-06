@@ -11,7 +11,6 @@ export function run(client, interaction) {
     name: `${client.user.username} - ${interaction.commandName}`,
     iconURL: client.user.displayAvatarURL()
   })
-  .setThumbnail('https://cutt.ly/gC1VJ8T')
   .setTitle('🏓 ¡Pong!')
   .setDescription(`- 📡 Mi ping actual es \`${client.ws.ping}ms\`.`)
   
