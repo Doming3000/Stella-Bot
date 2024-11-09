@@ -47,9 +47,33 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
+// Función para obtener el color del rol más alto del usuario
+function getUserColor(interaction, user) {
+  // Si es un mensaje directo, usar color blanco
+  if (!interaction.guild) {
+    return '#ffffff';
+  }
+  
+  // Obtener miembro del servidor
+  const member = interaction.guild.members.cache.get(user.id);
+  
+  // Si el usuario es miembro del servidor, usar el color del rol más alto del usuario
+  if (member && member.roles.highest && member.roles.highest.color) {
+    const colorHex = member.roles.highest.color.toString(16).padStart(6, '0');
+    return `#${colorHex}`;
+  }
+  
+  // Si no tiene roles o el rol no tiene color
+  return '#ffffff';
+}
+
 export async function run(client, interaction) {
+  // Obtener usuario y contenido del mensaje
   const user = interaction.options.getUser('usuario');
   const messageContent = interaction.options.getString('contenido');
+  
+  // Obtener color del rol del usuario
+  const userColor = getUserColor(interaction, user);
   
   try {
     // Crear canvas y contexto
@@ -62,7 +86,7 @@ export async function run(client, interaction) {
     
     // Configurar fuente y color para el nombre del usuario
     context.font = `${parameters.fontSize}px "${fonts.semiBold.name}"`;
-    context.fillStyle = parameters.fontColor;
+    context.fillStyle = userColor;
     context.textBaseline = 'top';
     
     // Dibujar nombre de usuario
