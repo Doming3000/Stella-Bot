@@ -152,7 +152,7 @@ export async function run(client, interaction) {
     // Exportar imagen
     const attachment = canvas.toBuffer('image/png');
     
-    interaction.reply({ files: [{ attachment, name: 'fake-message.png' }], allowedMentions: { repliedUser: false } });
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> **Este comando aún se encuentra en desarollo, puede presentar errores o estar incompleto.**", files: [{ attachment, name: 'fake-message.png' }], allowedMentions: { repliedUser: false } });
   } catch (error) {
     console.error('Ha ocurrido un error: ', error);
     interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});

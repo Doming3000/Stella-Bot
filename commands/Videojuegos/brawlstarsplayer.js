@@ -85,7 +85,7 @@ export async function run(client, interaction) {
       );
       
       // Enviar el primer mensaje con el embed y el botón
-      const sentMessage = await interaction.reply({ embeds: [embed], components: [actionRow], fetchReply: true, allowedMentions: { repliedUser: false }});
+      const sentMessage = await interaction.reply({ content: "<:Advertencia:1302055825053057084> **Este comando aún se encuentra en desarollo, puede presentar errores o estar incompleto.**", embeds: [embed], components: [actionRow], fetchReply: true, allowedMentions: { repliedUser: false }});
       
       // Crear un collector para manejar las interacciones de los botones
       const collector = sentMessage.createMessageComponentCollector({
