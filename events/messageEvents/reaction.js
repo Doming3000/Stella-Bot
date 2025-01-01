@@ -5,7 +5,7 @@ export async function handleMessage(message) {
   const content = message.content.toLowerCase();
   
   // Reaccion con un emoji custom
-  if (content.includes("porno")) {
+  if (content.includes("loremipsum")) {
     await message.react('<:SmugVanilla:1301622187350036581>');
   }
   
