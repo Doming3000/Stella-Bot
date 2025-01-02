@@ -16,6 +16,9 @@ export const data = new SlashCommandBuilder()
 );
 
 export async function run(client, interaction) {
+  // Diferir la respuesta para evitar el error de múltiples respuestas
+  await interaction.deferReply();
+  
   // Convertir a mayúsculas
   let tag = interaction.options.getString('tag').toUpperCase();
   
@@ -32,7 +35,7 @@ export async function run(client, interaction) {
   
   request(options, async function (err, resp, body) {
     if (err) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ocurrió un error al consultar la API.", flags: 64, allowedMentions: { repliedUser: true }});
+      await interaction.followUp({ content: "Ocurrió un error al consultar la API.", ephemeral: true });
       return;
     }
     
@@ -41,7 +44,7 @@ export async function run(client, interaction) {
       
       // Verificar si el jugador existe en la API
       if (!body || !body.name) {
-        interaction.reply({ content: "<:Advertencia:1302055825053057084> No he podido encontrar al jugador.", flags: 64, allowedMentions: { repliedUser: true }});
+        await interaction.followUp({ content: "No he podido encontrar al jugador.", ephemeral: true });
         return;
       }
       
@@ -76,7 +79,6 @@ export async function run(client, interaction) {
         .setEmoji('👍')
         .setLabel('Opción 1')
         .setStyle('Danger'),
-        
         new ButtonBuilder()
         .setCustomId('moredata')
         .setEmoji('👎')
@@ -85,7 +87,7 @@ export async function run(client, interaction) {
       );
       
       // Enviar el primer mensaje con el embed y el botón
-      const sentMessage = await interaction.reply({ content: "<:Advertencia:1302055825053057084> **Este comando aún se encuentra en desarollo, puede presentar errores o estar incompleto.**", embeds: [embed], components: [actionRow], withResponse: true, allowedMentions: { repliedUser: false }});
+      const sentMessage = await interaction.followUp({ embeds: [embed], components: [actionRow] });
       
       // Crear un collector para manejar las interacciones de los botones
       const collector = sentMessage.createMessageComponentCollector({
@@ -103,11 +105,10 @@ export async function run(client, interaction) {
             name: `${client.user.username}`,
             iconURL: client.user.displayAvatarURL()
           })
-          .setTitle(`Próximamente ${body.name}`)
+          .setTitle(`Próximamente ${body.name}`);
           
           await i.reply({ embeds: [battleLogEmbed] });
-        }
-        else if (i.customId === "moredata") {
+        } else if (i.customId === "moredata") {
           // Embed de estadisticas adicionales
           const moredataEmbed = new EmbedBuilder()
           .setColor(0xffcd00)
@@ -115,7 +116,7 @@ export async function run(client, interaction) {
             name: `${client.user.username}`,
             iconURL: client.user.displayAvatarURL()
           })
-          .setTitle(`Próximamente ${body.name}`)
+          .setTitle(`Próximamente ${body.name}`);
           
           await i.reply({ embeds: [moredataEmbed] });
         }
@@ -132,7 +133,7 @@ export async function run(client, interaction) {
       });
       
     } catch (err) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", flags: 64, allowedMentions: { repliedUser: true }});
+      await interaction.followUp({ content: "Ha ocurrido un error al ejecutar el comando.", ephemeral: true });
     }
   });
 }
