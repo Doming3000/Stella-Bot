@@ -73,13 +73,13 @@ export async function run(client, interaction) {
       .addComponents(
         new ButtonBuilder()
         .setCustomId('battle-log')
-        .setEmoji(':two:')
+        .setEmoji('👍')
         .setLabel('Opción 1')
         .setStyle('Danger'),
         
         new ButtonBuilder()
         .setCustomId('moredata')
-        .setEmoji(':one:')
+        .setEmoji('👎')
         .setLabel('Opción 2')
         .setStyle('Secondary'),
       );
