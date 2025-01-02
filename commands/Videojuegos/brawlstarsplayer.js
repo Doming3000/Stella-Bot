@@ -32,7 +32,7 @@ export async function run(client, interaction) {
   
   request(options, async function (err, resp, body) {
     if (err) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ocurrió un error al consultar la API.", ephemeral: true, allowedMentions: { repliedUser: true }});
+      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ocurrió un error al consultar la API.", flags: 64, allowedMentions: { repliedUser: true }});
       return;
     }
     
@@ -41,7 +41,7 @@ export async function run(client, interaction) {
       
       // Verificar si el jugador existe en la API
       if (!body || !body.name) {
-        interaction.reply({ content: "<:Advertencia:1302055825053057084> No he podido encontrar al jugador.", ephemeral: true, allowedMentions: { repliedUser: true }});
+        interaction.reply({ content: "<:Advertencia:1302055825053057084> No he podido encontrar al jugador.", flags: 64, allowedMentions: { repliedUser: true }});
         return;
       }
       
@@ -105,7 +105,7 @@ export async function run(client, interaction) {
           })
           .setTitle(`Registro de batalla de ${body.name}`)
           
-          await i.reply({ embeds: [battleLogEmbed], ephemeral: false });
+          await i.reply({ embeds: [battleLogEmbed] });
         }
         else if (i.customId === "moredata") {
           // Embed de estadisticas adicionales
@@ -117,7 +117,7 @@ export async function run(client, interaction) {
           })
           .setTitle(`Estadisticas adicionales de ${body.name}`)
           
-          await i.reply({ embeds: [moredataEmbed], ephemeral: false });
+          await i.reply({ embeds: [moredataEmbed] });
         }
       });
       
@@ -132,7 +132,7 @@ export async function run(client, interaction) {
       });
       
     } catch (err) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: true }});
+      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", flags: 64, allowedMentions: { repliedUser: true }});
     }
   });
 }

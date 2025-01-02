@@ -62,7 +62,7 @@ async function getDisplayName(interaction, user) {
     return user.globalName || user.username;
   } catch (error) {
     console.error('Ha ocurrido un error: ', error);
-    interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", flags: 64, allowedMentions: { repliedUser: false }});
   }
 }
 
@@ -87,7 +87,7 @@ function getUserColor(interaction, user) {
     return '#ffffff';
   } catch (error) {
     console.error('Ha ocurrido un error: ', error);
-    interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", flags: 64, allowedMentions: { repliedUser: false }});
   }
 }
 
@@ -155,6 +155,6 @@ export async function run(client, interaction) {
     interaction.reply({ content: "<:Advertencia:1302055825053057084> **Este comando aún se encuentra en desarollo, puede presentar errores o estar incompleto.**", files: [{ attachment, name: 'fake-message.png' }], allowedMentions: { repliedUser: false } });
   } catch (error) {
     console.error('Ha ocurrido un error: ', error);
-    interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", flags: 64, allowedMentions: { repliedUser: false }});
   }
 }

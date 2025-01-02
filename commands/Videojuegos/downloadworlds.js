@@ -26,6 +26,6 @@ export function run(client, interaction) {
     
     interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } });
   } else {
-    interaction.reply({ content: "<:Advertencia:1302055825053057084> Lo siento, este comando es privado.", ephemeral: true, allowedMentions: { repliedUser: false }});
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> Lo siento, este comando es privado.", flags: 64, allowedMentions: { repliedUser: false }});
   }
 }

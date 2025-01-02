@@ -15,7 +15,7 @@ export function run(client, interaction) {
   const caracteres = nombre.length;
 
   if (caracteres > 16) {
-    interaction.reply({ content: "<:Advertencia:1302055825053057084> El nombre de este jugador sobrepasa los 16 caracteres.", ephemeral: true, allowedMentions: { repliedUser: false }});
+    interaction.reply({ content: "<:Advertencia:1302055825053057084> El nombre de este jugador sobrepasa los 16 caracteres.", flags: 64, allowedMentions: { repliedUser: false }});
     return;
   }
   
@@ -24,7 +24,7 @@ export function run(client, interaction) {
   request(mojang_player_api, function (err, resp, body) {
     // Si hay un error con la solicitud, enviar un mensaje de error.
     if (err) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ocurrió un error al consultar la API.", ephemeral: true, allowedMentions: { repliedUser: false }});
+      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ocurrió un error al consultar la API.", flags: 64, allowedMentions: { repliedUser: false }});
       return;
     }
     
@@ -33,7 +33,7 @@ export function run(client, interaction) {
       
       // Verificar si el jugador no existe
       if (!body || !body.id) {
-        interaction.reply({ content: "<:Advertencia:1302055825053057084> No he podido encontrar al jugador.", ephemeral: true, allowedMentions: { repliedUser: false }});
+        interaction.reply({ content: "<:Advertencia:1302055825053057084> No he podido encontrar al jugador.", flags: 64, allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -63,7 +63,7 @@ export function run(client, interaction) {
       
       interaction.reply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false } });
     } catch (err) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", ephemeral: true, allowedMentions: { repliedUser: false }});
+      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", flags: 64, allowedMentions: { repliedUser: false }});
     }
   });
 }

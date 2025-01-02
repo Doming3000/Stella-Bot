@@ -10,16 +10,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.60",
-    "axios": "^1.7.7",
-    "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5",
-    "fs": "^0.0.1-security",
-    "mongoose": "^8.8.0",
+    "@napi-rs/canvas": "^0.1.65",
+    "axios": "^1.7.9",
+    "discord.js": "^14.17.2",
+    "dotenv": "^16.4.7",
+    "fs": "^0.0.2",
+    "mongoose": "^8.9.3",
     "node_characterai": "^1.2.7",
+    "psl": "^1.15.0",
     "request": "^2.88.2",
     "twemoji-parser": "^14.0.0",
-    "undici": "^6.20.1"
+    "undici": "^7.2.0"
   },
   "type": "module"
 }

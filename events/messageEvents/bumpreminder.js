@@ -13,9 +13,9 @@ export async function handleMessage(message) {
       // Comprobar contenido del embed
       const embedContent = 'Bump done!';
       
-      // Si el mensaje contiene el contenido correcto
+      // Si el mensaje contiene el contenido correcto, se asume que el bump se realizó correctamente
       if (embed.description?.includes(embedContent)) {
-        // Verificar si el mensaje está en el canal correcto
+        // Verificar si el bump se realizó en el canal correcto
         if (message.channel.id === bumpChannels) {
           // Obtener el timestamp actual en milisegundos
           const now = Date.now();
@@ -27,7 +27,7 @@ export async function handleMessage(message) {
           const futureTimestampInSeconds = Math.floor(futureTimestamp / 1000);
           
           // Enviar mensaje de felicitación al canal
-          message.channel.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta.<:Cookies:1324082997850275875>\nRecuerda regresar <t:${futureTimestampInSeconds}:R> para el siguiente bump.`});
+          message.channel.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>\nRecuerda regresar <t:${futureTimestampInSeconds}:R> para el siguiente bump.`});
         } else {
           // Responder si el canal es incorrecto
           message.channel.send({ content: "**¡Canal equivocado!** Eso no está bien... [Es hora del castigo...](https://tenor.com/view/the-amazing-digital-circus-caine-cellar-into-the-cellar-you-go-digital-circus-gif-15816184000111723724) <@1318394391915925537>" });
@@ -36,3 +36,9 @@ export async function handleMessage(message) {
     }
   }
 }
+
+// Pendiente a realizar:
+// Envíar mensaje mediante webhook y no mediante la app
+// Enviar mensaje de notificacion despues de las 2 horas
+// Bloquear y desbloquear el canal según si el servidor es bumpeable o no
+// Considerar si notificar a algún rol al momento de notificar

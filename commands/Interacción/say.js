@@ -9,9 +9,9 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
-// Función auxiliar para enviar la confirmación de mensaje y eliminarla después de un tiempo
+// función auxiliar para enviar la confirmación de mensaje y eliminarla después de un tiempo
 async function sendConfirmation(interaction, message = 'Mensaje enviado!') {
-  const reply = await interaction.reply({ content: message, ephemeral: true });
+  const reply = await interaction.reply({ content: message, flags: 64 });
   
   // Eliminar la confirmación después de 3 segundos
   setTimeout(() => reply.delete(), 3000);
@@ -28,7 +28,7 @@ export async function run(client, interaction) {
     // Verificar si el contenido incluye menciones masivas
     const roleMentionPattern = /<@&\d+>/;
     if (contenido.includes('@everyone') || contenido.includes('@here') || roleMentionPattern.test(contenido)) {
-      await interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', ephemeral: true });
+      await interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', flags: 64 });
     } else {
       sendConfirmation(interaction);
       interaction.channel.send({ content: contenido });
