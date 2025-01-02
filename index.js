@@ -18,7 +18,7 @@ const client = new Client({
 client.commands = new Collection();
 
 // Inicia sesión con el token desde config.json
-client.login(config.token).then(() => console.log("🟢 La aplicación está en línea."));
+client.login(config.token).then(() => console.log("✅ - La aplicación está en línea."));
 
 // Función para cargar comandos
 function loadCommands() {

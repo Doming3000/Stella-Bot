@@ -73,14 +73,14 @@ export async function run(client, interaction) {
       .addComponents(
         new ButtonBuilder()
         .setCustomId('battle-log')
-        .setEmoji('<:BSBattleLog:1302329756641001542>')
-        .setLabel('Registro de batalla')
+        .setEmoji(':two:')
+        .setLabel('Opción 1')
         .setStyle('Danger'),
         
         new ButtonBuilder()
         .setCustomId('moredata')
-        .setEmoji('<:SmugVanilla:1301622187350036581>')
-        .setLabel('Estadísticas adicionales')
+        .setEmoji(':one:')
+        .setLabel('Opción 2')
         .setStyle('Secondary'),
       );
       
@@ -103,7 +103,7 @@ export async function run(client, interaction) {
             name: `${client.user.username}`,
             iconURL: client.user.displayAvatarURL()
           })
-          .setTitle(`Registro de batalla de ${body.name}`)
+          .setTitle(`Próximamente ${body.name}`)
           
           await i.reply({ embeds: [battleLogEmbed] });
         }
@@ -115,7 +115,7 @@ export async function run(client, interaction) {
             name: `${client.user.username}`,
             iconURL: client.user.displayAvatarURL()
           })
-          .setTitle(`Estadisticas adicionales de ${body.name}`)
+          .setTitle(`Próximamente ${body.name}`)
           
           await i.reply({ embeds: [moredataEmbed] });
         }

@@ -21,7 +21,7 @@ export async function run(client, interaction) {
   const contenido = interaction.options.getString('contenido');
   
   // Registrar en la consola al usuario que ejecutó el comando
-  console.log(`- ${interaction.user.tag} ${interaction.user.id} usó /say: ${contenido}.`);
+  console.log(`📃 - ${interaction.user.tag} | ${interaction.user.id} usó /say: ${contenido}.`);
   
   // Comprobar si existe un canal de interacción; si no, se asume que es un mensaje directo
   if (!interaction.channel) {
