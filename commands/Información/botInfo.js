@@ -58,7 +58,7 @@ async function run(client, interaction) {
   .addFields(
     { name: "📚 - Versiones", value: `➜ <:Discord:1302057111550824561> **Discord.js**: \`${discordVersion}\`\n➜ <:Nodejs:1302056618971889757> **Node.js**: \`${nodeVersion}\``, inline: true },
     { name: "📃 - Información Adicional:", value: "➜ <:Javascript:1302106857724448872> Programado con **Javascript**\n➜ :technologist: Desarollado por: <@811071747189112852>", inline: true },
-    { name: "🖥️ - Entorno actual", value: `➜ \`${getEnvironment()}\``, inline: false }
+    { name: "🖥️ - Entorno actual", value: `➜ **${getEnvironment()}**`, inline: false }
   );
   
   await interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } });

@@ -5,12 +5,12 @@ export async function handleMessage(message) {
   const content = message.content.toLowerCase();
   
   // Reacción con un emoji custom
-  if (content.includes("Lorem ipsum dolor sit")) {
+  if (content.includes("loremipsum")) {
     await message.react('<:SmugVanilla:1324462261498286130>');
   }
   
   // Reacción con un emoji preterminado
-  else if (content.includes("Lorem ipsum dolor sit 2")) {
+  else if (content.includes("dolorsit")) {
     await message.react("🐔");
   }
 }
