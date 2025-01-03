@@ -34,7 +34,6 @@ export async function handleMessage(message) {
             message.channel.send({ content: `**¡Es hora de Bumpear!\n<:DiscordSlashCommand:1302071335987707924>﹕</bump:947088344167366698>**`});
           }, 2 * 60 * 60 * 1000);
         } else {
-          // Responder si el canal es incorrecto
           message.channel.send({ content: "**¡Canal equivocado!** Eso no está bien... [Es hora del castigo...](https://tenor.com/view/the-amazing-digital-circus-caine-cellar-into-the-cellar-you-go-digital-circus-gif-15816184000111723724) <@1318394391915925537>" });
         }
       }
