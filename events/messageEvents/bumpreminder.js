@@ -28,6 +28,11 @@ export async function handleMessage(message) {
           
           // Enviar mensaje de felicitación al canal
           message.channel.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>\nRecuerda regresar <t:${futureTimestampInSeconds}:R> para el siguiente bump.`});
+          
+          // Programar mensaje para después de 2 horas (reemplazar por sistema que trabaje con base de datos)
+          setTimeout(() => {
+            message.channel.send({ content: `**¡Es hora de Bumpear!\n<:DiscordSlashCommand:1302071335987707924>﹕</bump:947088344167366698>**`});
+          }, 2 * 60 * 60 * 1000);
         } else {
           // Responder si el canal es incorrecto
           message.channel.send({ content: "**¡Canal equivocado!** Eso no está bien... [Es hora del castigo...](https://tenor.com/view/the-amazing-digital-circus-caine-cellar-into-the-cellar-you-go-digital-circus-gif-15816184000111723724) <@1318394391915925537>" });
@@ -39,6 +44,5 @@ export async function handleMessage(message) {
 
 // Pendiente a realizar:
 // Envíar mensaje mediante webhook y no mediante la app
-// Enviar mensaje de notificacion despues de las 2 horas
 // Bloquear y desbloquear el canal según si el servidor es bumpeable o no
 // Considerar si notificar a algún rol al momento de notificar
