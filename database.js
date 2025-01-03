@@ -1,9 +1,11 @@
+import mysql from 'mysql';
 import dotenv from 'dotenv';
+
+// Cargar variables de entorno
 dotenv.config();
 
-const mysql = require('mysql');
-
-const connection = mysql.createConnection({
+// Crear conexión a la base de datos
+const db = mysql.createConnection({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
   user: process.env.DB_USER,
@@ -12,10 +14,13 @@ const connection = mysql.createConnection({
 });
 
 // Conectar a la base de datos
-connection.connect((err) => {
+db.connect((err) => {
   if (err) {
-    console.error('Error conectando a la base de datos:', err.stack);
+    console.error('Error conectando a MySQL:', err);
     return;
   }
-  console.log('Conectado a la base de datos como ID', connection.threadId);
+  console.log('Conectado a la base de datos MySQL');
 });
+
+// Exportar la conexión para usarla en otros archivos
+export default db;
