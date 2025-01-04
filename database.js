@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 // Cargar variables de entorno
 dotenv.config();
 
-// Crear conexión a la base de datos
-const db = mysql.createConnection({
+// Crear un grupo de conexiones
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
   user: process.env.DB_USER,
@@ -13,14 +13,14 @@ const db = mysql.createConnection({
   database: process.env.DB_NAME,
 });
 
-// Conectar a la base de datos
-db.connect((err) => {
-  if (err) {
-    console.error('Error conectando a MySQL:', err);
-    return;
-  }
-  console.log('Conectado a la base de datos MySQL');
-});
-
-// Exportar la conexión para usarla en otros archivos
-export default db;
+// Función para realizar consultas
+export function query(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    pool.query(sql, params, (err, results) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(results);
+    });
+  });
+}
