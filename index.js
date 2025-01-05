@@ -21,7 +21,7 @@ client.commands = new Collection();
 
 // Iniciar sesión con el token desde config.json
 client.login(config.token).then(async () => {
-  console.log("✅ - La aplicación está en línea.");
+  console.log("✅  - La aplicación está en línea.");
   
   // Esperar 5 segundos para asegurar que el cliente esté completamente inicializado
   await new Promise(resolve => setTimeout(resolve, 5000));

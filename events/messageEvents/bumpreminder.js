@@ -3,10 +3,8 @@ import schedule from "node-schedule";
 
 export async function handleMessage(message) {
   // ID de Disboard y canales destinados a Bumpear
-  // const disboardID = '302050872383242240';
-  // const bumpChannels = '1311440187141656687';
-  const disboardID = "1324882956917018755";
-  const bumpChannels = "1324882908065955901";
+  const disboardID = '302050872383242240';
+  const bumpChannels = '1311440187141656687';
   
   if (message.author.id === disboardID) {
     if (message.embeds.length > 0) {
@@ -19,8 +17,7 @@ export async function handleMessage(message) {
         if (message.channel.id === bumpChannels) {
           // Obtener el timestamp actual en milisegundos y añadir 2 horas para el recordatorio
           const now = Date.now();
-          // const futureTimestamp = now + 2 * 60 * 60 * 1000;
-          const futureTimestamp = now + 1 * 60 * 1000; // Añadir 1 minuto para pruebas
+          const futureTimestamp = now + 2 * 60 * 60 * 1000;
           
           try {
             // Convertir el timestamp a segundos para Discord
@@ -89,7 +86,7 @@ export async function checkPendingBumps(client) {
     const rows = await query("SELECT channel_id, next_bump, message_id FROM bumps");
     
     // Verificar cuántos registros hay en la base de datos
-    console.log(`📃  - Se encontró${rows.length === 1 ? '' : 'n'} ${rows.length} ${rows.length === 1 ? 'recordatorio' : 'recordatorios'} en la base de datos.`);
+    console.log(`📃  - Se encontró${rows.length === 1 ? '' : 'n'} ${rows.length} ${rows.length === 1 ? 'recordatorio' : 'recordatorios'} pendiente en la base de datos.`);
     
     rows.forEach(async (row) => {
       const { channel_id, next_bump } = row;
