@@ -31,6 +31,9 @@ export async function handleMessage(message) {
             
             // Programar recordatorio con node-schedule
             schedule.scheduleJob(new Date(futureTimestamp), async () => {
+              const actualNow = Date.now();
+              console.log(`📃  - Recordatorio ejecutado. Retraso de: ${actualNow - futureTimestamp} ms`);
+              
               await sendBumpReminder(message.channel);
             });
             
@@ -86,7 +89,7 @@ export async function checkPendingBumps(client) {
     const rows = await query("SELECT channel_id, next_bump, message_id FROM bumps");
     
     // Verificar cuántos registros hay en la base de datos
-    console.log(`📃  - Se encontró${rows.length === 1 ? '' : 'n'} ${rows.length} ${rows.length === 1 ? 'recordatorio' : 'recordatorios'} pendiente en la base de datos.`);
+    console.log(`📃  - Se ${rows.length === 1 ? 'encontró' : 'encontraron'} ${rows.length} ${rows.length === 1 ? 'recordatorio pendiente' : 'recordatorios pendientes'} en la base de datos.`);
     
     rows.forEach(async (row) => {
       const { channel_id, next_bump } = row;
