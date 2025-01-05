@@ -1,9 +1,12 @@
 import { query } from '../../database.js';
+import schedule from "node-schedule";
 
 export async function handleMessage(message) {
   // ID de Disboard y canales destinados a Bumpear
-  const disboardID = '302050872383242240';
-  const bumpChannels = '1311440187141656687';
+  // const disboardID = '302050872383242240';
+  // const bumpChannels = '1311440187141656687';
+  const disboardID = "1324882956917018755";
+  const bumpChannels = "1324882908065955901";
   
   if (message.author.id === disboardID) {
     if (message.embeds.length > 0) {
@@ -16,7 +19,8 @@ export async function handleMessage(message) {
         if (message.channel.id === bumpChannels) {
           // Obtener el timestamp actual en milisegundos y añadir 2 horas para el recordatorio
           const now = Date.now();
-          const futureTimestamp = now + 2 * 60 * 60 * 1000;
+          // const futureTimestamp = now + 2 * 60 * 60 * 1000;
+          const futureTimestamp = now + 1 * 60 * 1000; // Añadir 1 minuto para pruebas
           
           try {
             // Convertir el timestamp a segundos para Discord
@@ -27,15 +31,15 @@ export async function handleMessage(message) {
             
             // Registrar el bump en la base de datos, actualizando el próximo bump si es necesario
             await query("INSERT INTO bumps (channel_id, next_bump, message_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE next_bump = ?, message_id = ?", [bumpChannels, futureTimestamp, thanksMessage.id, futureTimestamp, thanksMessage.id]);
-            console.log("Se ha añadido un registro a la base de datos. Motivo: Bump registrado")
             
-            // Configurar setTimeout para enviar el recordatorio
-            setTimeout(async () => {
+            // Programar recordatorio con node-schedule
+            schedule.scheduleJob(new Date(futureTimestamp), async () => {
               await sendBumpReminder(message.channel);
-            }, futureTimestamp - now);
+            });
             
+            console.log(`📃  - Se ha añadido un recordatorio en la base de datos para las ${new Date(futureTimestamp).toISOString()}`);
           } catch (err) {
-            console.error("Ha ocurrido un error al intentar registrar el bump en la base de datos:", err);
+            console.error("Ha ocurrido un error al intentar registrar el recordatorio en la base de datos:", err);
           }
         } else {
           // Si el bump se realiza en el canal equivocado, envíar mensaje
@@ -52,14 +56,14 @@ async function sendBumpReminder(channel) {
     // Recuperar el registro del bump en la base de datos
     const [record] = await query("SELECT message_id FROM bumps WHERE channel_id = ?", [channel.id]);
     if (!record?.message_id) {
-      console.warn(`No se encontró un mensaje para editar en el canal ${channel.id}.`);
+      console.warn(`📃  - No se encontró un mensaje para editar en el canal ${channel.id}.`);
       return;
     }
     
     // Obtener el mensaje anterior a partir de su ID
     const messageToEdit = await channel.messages.fetch(record.message_id).catch(() => null);
     if (!messageToEdit) {
-      console.warn(`No se pudo encontrar el mensaje con ID ${record.message_id} en el canal ${channel.id}.`);
+      console.warn(`📃  - No se pudo encontrar el mensaje con la ID ${record.message_id} en el canal ${channel.id}.`);
     } else {
       // Editar el mensaje anterior
       await messageToEdit.edit({ content: "**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>" });
@@ -70,9 +74,9 @@ async function sendBumpReminder(channel) {
     
     // Eliminar el registro de la base de datos
     await query("DELETE FROM bumps WHERE channel_id = ?", [channel.id]);
-    console.log(`Se ha eliminado un registro para el canal ${channel.id}. Motivo: recordatorio enviado.`);
+    console.log(`📃  - Se ha eliminado un registro para el canal ${channel.id}. Motivo: Recordatorio enviado.`);
   } catch (error) {
-    console.error("Ha ocurrido un error al enviar el recordatorio:", error);
+    console.error("📃  - Ha ocurrido un error al enviar el recordatorio:", error);
   }
 }
 
@@ -84,36 +88,32 @@ export async function checkPendingBumps(client) {
     // Consultar la base de datos en busca de registros pendientes
     const rows = await query("SELECT channel_id, next_bump, message_id FROM bumps");
     
-    // Verificar cuantos registros hay en la base de datos
-    console.log(`Se encontraron ${rows.length} bumps en la base de datos.`);
+    // Verificar cuántos registros hay en la base de datos
+    console.log(`📃  - Se encontró${rows.length === 1 ? '' : 'n'} ${rows.length} ${rows.length === 1 ? 'recordatorio' : 'recordatorios'} en la base de datos.`);
     
-    for (const row of rows) {
+    rows.forEach(async (row) => {
       const { channel_id, next_bump } = row;
-      const delay = next_bump - now;
-      
-      const channel = await client.channels.fetch(channel_id).catch(err => {
-        console.warn(`No se pudo encontrar el canal con ID: ${channel_id}. Error: ${err.message}`);
+      const channel = await client.channels.fetch(channel_id).catch((err) => {
+        console.warn(`📃  - No se pudo encontrar el canal con ID: ${channel_id}. Error: ${err.message}`);
         return null;
       });
       
       if (channel) {
-        if (delay > 0) {
-          // Si el registro se hará en el futuro, se programa un setTimeout
-          console.log(`Configurando recordatorio para el canal ${channel_id} en ${delay} ms.`);
-          setTimeout(async () => {
+        if (next_bump > now) {
+          schedule.scheduleJob(new Date(next_bump), async () => {
             await sendBumpReminder(channel);
-          }, delay);
+          });
         } else {
           // Si el registro ya está vencido se elimina
           await query("DELETE FROM bumps WHERE channel_id = ?", [channel.id]);
-          console.log(`Se ha eliminado un registro para el canal ${channel_id}. Motivo: vencimiento.`);
+          console.log(`📃  - Se ha eliminado un registro para el canal ${channel_id}. Motivo: Vencimiento.`);
         }
       } else {
-        console.warn(`No se pudo acceder al canal con la ID: ${channel_id}`);
+        console.warn(`📃  - No se pudo acceder al canal con la ID: ${channel_id}`);
       }
-    }
+    });
   } catch (error) {
-    console.error("Ha ocurrido un error al verificar los bumps pendientes:", error);
+    console.error("📃  - Ha ocurrido un error al verificar los bumps pendientes:", error);
   }
 }
 
