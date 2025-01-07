@@ -1,6 +1,6 @@
 import { query } from '../../database.js';
+import { CronJob } from "cron";
 
-// Función principal para manejar mensajes relacionados con el bump
 export async function handleMessage(message) {
   // ID de Disboard y canal destinado a Bumpear
   const disboardID = '302050872383242240';
@@ -18,38 +18,34 @@ export async function handleMessage(message) {
   
   // Comprobar si el mensaje fue enviado en el canal correcto
   if (message.channel.id !== bumpChannels) {
-    await message.channel.send({ 
-      content: "**¡Canal equivocado!** Eso no está bien... [Es hora del castigo...](https://tenor.com/view/the-amazing-digital-circus-caine-cellar-into-the-cellar-you-go-digital-circus-gif-15816184000111723724) <@1318394391915925537>" 
-    });
+    await message.channel.send({ content: "**¡Canal equivocado!** Eso no está bien... [Es hora del castigo...](https://tenor.com/view/the-amazing-digital-circus-caine-cellar-into-the-cellar-you-go-digital-circus-gif-15816184000111723724) <@1318394391915925537>" });
     return;
   }
   
   // Si el bump se realizó correctamente, calcular el tiempo para el próximo bump
   const now = Date.now();
   const futureTimestamp = now + 2 * 60 * 60 * 1000;
-  const futureTimestampInSeconds = Math.floor(futureTimestamp / 1000);
+  const futureTimestampInSeconds = `<t:${Math.floor(futureTimestamp / 1000)}:R>`;
   
   try {
     // Enviar un mensaje de agradecimiento al canal
-    const thanksMessage = await message.channel.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>\nRecuerda regresar <t:${futureTimestampInSeconds}:R> para el siguiente bump.` });
+    const thanksMessage = await message.channel.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>\nRecuerda regresar ${futureTimestampInSeconds} para el siguiente bump.` });
     
     // Insertar o actualizar el recordatorio en la base de datos
     await insertReminder(bumpChannels, futureTimestamp, thanksMessage.id);
+    console.log(`📃  - Se ha añadido un recordatorio para las ${new Date(futureTimestamp).toISOString()}. Motivo: Servidor bumpeado.`);
     
-    // Programar el recordatorio para enviar en el futuro
-    const delay = futureTimestamp - Date.now();
-    setTimeout(() => sendBumpReminder(message.channel), Math.max(delay, 0));
-    
-    console.log(`📃  - Se ha añadido un recordatorio para las ${new Date(futureTimestamp).toISOString()}`);
+    // Programar el recordatorio
+    programReminder(futureTimestamp, message.channel);
   } catch (err) {
-    console.error("Ha ocurrido un error al registrar el recordatorio en la base de datos:", err);
+    console.error("📃  - Ha ocurrido un error al registrar el recordatorio en la base de datos:", err);
   }
 }
 
-// Función para enviar el recordatorio del próximo bump
+// Función para enviar el recordatorio del próximo bump después de un tiempo
 async function sendBumpReminder(channel) {
   try {
-    // Recuperar el registro del bump en la base de datos
+    // Recuperar el registro del recordatorio en la base de datos
     const [record] = await query("SELECT message_id FROM bumps WHERE channel_id = ?", [channel.id]);
     
     if (!record) {
@@ -60,12 +56,14 @@ async function sendBumpReminder(channel) {
     // Obtener el mensaje anterior a partir de su ID
     const messageToEdit = await channel.messages.fetch(record.message_id).catch(() => null);
     
+    // Si no se encuentra el mensaje, se asume que se perdió y se borra el registro.
     if (!messageToEdit) {
       console.warn(`📃  - No se pudo encontrar el mensaje con la ID en el canal ${channel.id}.`);
+      await deleteReminder(channel.id);
       return;
     }
     
-    // Editar el mensaje anterior y enviar un nuevo mensaje de recordatorio
+    // Editar el mensaje anterior y enviar un mensaje de recordatorio
     await Promise.all([
       messageToEdit.edit({ content: "**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>" }),
       channel.send({ content: "**¡Es hora de bumpear!\n<:DiscordSlashCommand:1302071335987707924>﹕</bump:947088344167366698>**" })
@@ -85,7 +83,7 @@ export async function checkPendingBumps(client) {
     // Consultar la base de datos en busca de registros pendientes
     const rows = await query("SELECT channel_id, next_bump FROM bumps");
     
-    console.log(`📃  - Se encontraron ${rows.length} recordatorios pendientes.`);
+    console.log(`📃  - Se ${rows.length === 1 ? 'encontró' : 'encontraron'} ${rows.length} ${rows.length === 1 ? 'recordatorio' : 'recordatorios'} en la base de datos.`);
     
     rows.forEach(async ({ channel_id, next_bump }) => {
       const channel = await client.channels.fetch(channel_id).catch(err => {
@@ -97,8 +95,7 @@ export async function checkPendingBumps(client) {
       
       // Si hay un próximo bump programado, programar su envío
       if (next_bump > Date.now()) {
-        const delay = next_bump - Date.now();
-        setTimeout(() => sendBumpReminder(channel), Math.max(delay, 0));
+        programReminder(next_bump, channel);
       } else {
         // Si el registro ya está vencido se elimina
         await deleteReminder(channel_id);
@@ -118,4 +115,14 @@ async function insertReminder(channelId, nextBump, messageId) {
 // Función para eliminar un registro de la base de datos
 async function deleteReminder(channelId) {
   await query("DELETE FROM bumps WHERE channel_id = ?", [channelId]);
+}
+
+// Función para programar el recordatorio con Cron
+async function programReminder(futureTimestamp, channel) {
+  const job = new CronJob(new Date(futureTimestamp), async () => {
+    await sendBumpReminder(channel);
+    job.stop();
+  });
+  
+  job.start();
 }
