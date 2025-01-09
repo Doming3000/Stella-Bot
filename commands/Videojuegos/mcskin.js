@@ -24,8 +24,8 @@ export async function run(client, interaction) {
   const mojangPlayerApi = `https://api.mojang.com/users/profiles/minecraft/${nombre}`;
   
   try {
-    // Indicar que estamos procesando la solicitud
-    await interaction.deferReply({ flags: 0 });
+    // Indicar que se está procesando la solicitud
+    await interaction.deferReply({ allowedMentions: { repliedUser: false }});
     
     // Realizar una solicitud HTTP GET a la API usando axios.
     const response = await axios.get(mojangPlayerApi);
@@ -65,7 +65,7 @@ export async function run(client, interaction) {
     if (error.response && error.response.status === 404) {
       interaction.editReply({ content: "<:Advertencia:1302055825053057084> No se ha podido encontrar al jugador.", allowedMentions: { repliedUser: false }});
     } else {
-      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar el comando.", allowedMentions: { repliedUser: false }});
+      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
     }
   }
 }

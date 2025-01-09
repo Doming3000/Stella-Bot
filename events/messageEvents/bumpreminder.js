@@ -48,11 +48,6 @@ async function sendBumpReminder(channel) {
     // Recuperar el registro del recordatorio en la base de datos
     const [record] = await query("SELECT message_id FROM bumps WHERE channel_id = ?", [channel.id]);
     
-    if (!record) {
-      console.warn(`📃  - No se encontró ningún registro para el canal ${channel.id}.`);
-      return;
-    }
-    
     // Obtener el mensaje anterior a partir de su ID
     const messageToEdit = await channel.messages.fetch(record.message_id).catch(() => null);
     
