@@ -1,7 +1,7 @@
 import { query } from '../../database.js';
 import { CronJob } from "cron";
 
-export async function handleMessage(message) {
+export async function handleMessage(message, client) {
   // ID de Disboard y canal destinado a Bumpear
   const disboardID = '302050872383242240';
   const bumpChannels = '1311440187141656687';
