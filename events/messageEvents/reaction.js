@@ -5,17 +5,29 @@ export async function handleMessage(message, client) {
   const content = message.content.toLowerCase();
   
   // Verificar si el bot fue mencionado de forma directa
-  if (message.mentions.has(client.user) && !message.mentions.everyone && !message.mentions.roles.size) {
-    await message.react("👋");
+  if (message.mentions.has(client.user) && !message.mentions.everyone && !message.system) {
+    // Verificar que la mención esté en el texto del mensaje y no en otras estructuras
+    const mentionRegex = new RegExp(`^<@!?${client.user.id}>`);
+    
+    if (mentionRegex.test(message.content)) {
+      await message.react("👋");
+    }
   }
   
-  // Reacción con un emoji custom
-  else if (content.includes("loremipsum")) {
+  // Usar switch para manejar diferentes contenidos
+  switch (true) {
+    // Reaccionar con un emoji custom
+    case content.includes("loremipsum"):
     await message.react('<:SmugVanilla:1324462261498286130>');
-  }
-  
-  // Reacción con un emoji preterminado
-  else if (content.includes("dolorsit")) {
+    break;
+    
+    // Reaccionar con un emoji preterminado
+    case content.includes("dolorsit"):
     await message.react("🐔");
+    break;
+    
+    // Predeterminado
+    default:
+    break;
   }
 }
