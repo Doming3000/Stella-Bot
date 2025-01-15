@@ -16,6 +16,11 @@ export async function handleMessage(message, client) {
   
   // Comprobar contenido de mensajes
   switch (true) {
+    // Rawr
+    case content.includes("rawr"):
+    await message.react('<a:RawrAttack:1329113910376271943>');
+    break;
+    
     // Reaccionar con un emoji custom
     case content.includes("hello world!"):
     await message.react('<:SmugVanilla:1324462261498286130>');
