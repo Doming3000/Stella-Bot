@@ -1,5 +1,9 @@
+import { WebhookClient } from 'discord.js';
 import { query } from '../../database.js';
 import { CronJob } from "cron";
+
+// Webhook para enviar mensajes
+const webhook = new WebhookClient({ id: '1345083112094302339', token: '9YDFOoDxxgxk717guAMlhTTJxPYU43pqLpYU3Q5qWoi5Kvz4VlbLQr0MZF8CK3yyzWNv' });
 
 export async function handleMessage(message, client) {
   // ID de Disboard y canal destinado a Bumpear
@@ -29,7 +33,7 @@ export async function handleMessage(message, client) {
   
   try {
     // Enviar un mensaje de agradecimiento al canal
-    const thanksMessage = await message.channel.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>\nRecuerda regresar ${futureTimestampInSeconds} para el siguiente bump.` });
+    const thanksMessage = await webhook.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1345267507229102142>\nRecuerda regresar ${futureTimestampInSeconds} para el siguiente bump.`, username: "🚀 Bump Reminder"});
     
     // Insertar o actualizar el recordatorio en la base de datos
     await insertReminder(bumpChannels, futureTimestamp, thanksMessage.id);
@@ -49,24 +53,24 @@ async function sendBumpReminder(channel) {
     const [record] = await query("SELECT message_id FROM bumps WHERE channel_id = ?", [channel.id]);
     
     // Obtener el mensaje anterior a partir de su ID
-    const messageToEdit = await channel.messages.fetch(record.message_id).catch(() => null);
+    const messageToDelete = await channel.messages.fetch(record.message_id).catch(() => null);
     
     // Si no se encuentra el mensaje, se asume que se perdió y se borra el registro.
-    if (!messageToEdit) {
+    if (!messageToDelete) {
       console.warn(`📃  - No se pudo encontrar el mensaje con la ID en el canal ${channel.id}.`);
       await deleteReminder(channel.id);
       return;
     }
     
-    // Editar el mensaje anterior y enviar un mensaje de recordatorio
+    // Eliminar el mensaje anterior y enviar un mensaje de recordatorio
     await Promise.all([
-      messageToEdit.edit({ content: "**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1324082997850275875>" }),
-      channel.send({ content: "**¡Es hora de bumpear!\n<:DiscordSlashCommand:1302071335987707924>﹕</bump:947088344167366698>**" })
+      await messageToDelete.delete(),
+      webhook.send({ content: "**¡Es hora de bumpear!\n<:DiscordSlashCommand:1345270704983113788>﹕</bump:947088344167366698>**", username: "🚀 Bump Reminder"})
     ]);
     
     // Eliminar el registro de la base de datos después de enviar el recordatorio
     await deleteReminder(channel.id);
-    console.log(`📃  - Recordatorio enviado y registro eliminado para el canal ${channel.id}.`);
+    console.log(`📃  - Se ha enviado el recordatorio y eliminado el registro para el canal ${channel.id}.`);
   } catch (error) {
     console.error("📃  - Ha ocurrido un error al enviar el recordatorio:", error);
   }
