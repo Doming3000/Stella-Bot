@@ -3,7 +3,7 @@ import { query } from '../../database.js';
 import { CronJob } from "cron";
 
 // Webhook para enviar mensajes
-const webhook = new WebhookClient({ id: '1345083112094302339', token: '9YDFOoDxxgxk717guAMlhTTJxPYU43pqLpYU3Q5qWoi5Kvz4VlbLQr0MZF8CK3yyzWNv' });
+
 
 export async function handleMessage(message, client) {
   // ID de Disboard y canal destinado a Bumpear
