@@ -1,9 +1,13 @@
 import { WebhookClient } from 'discord.js';
 import { query } from '../../database.js';
 import { CronJob } from "cron";
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno
+dotenv.config();
 
 // Webhook para enviar mensajes
-
+const webhook = new WebhookClient({ id: '1345083112094302339', token: process.env.WH_TOKEN });
 
 export async function handleMessage(message, client) {
   // ID de Disboard y canal destinado a Bumpear
