@@ -37,7 +37,7 @@ export async function handleMessage(message, client) {
   
   try {
     // Enviar un mensaje de agradecimiento al canal
-    const thanksMessage = await webhook.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1345267507229102142>\nRecuerda regresar ${futureTimestampInSeconds} para el siguiente bump.`, username: "🚀 Bump Reminder"});
+    const thanksMessage = await webhook.send({ content: `**¡Muchas gracias por bumpearnos!** Toma una galleta <:Cookies:1345267507229102142>\nRecuerda regresar ${futureTimestampInSeconds} para el siguiente bump.\n-# Gestionado por Stella.`, username: "🚀 Bump Reminder"});
     
     // Insertar o actualizar el recordatorio en la base de datos
     await insertReminder(bumpChannels, futureTimestamp, thanksMessage.id);
