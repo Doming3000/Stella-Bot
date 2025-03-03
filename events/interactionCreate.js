@@ -14,7 +14,7 @@ export async function execute(interaction, client) {
   
   // Manejador de botones mediante IDs
   else if (interaction.customId === "deleteMessage") {
-    // comprobar si el usuario tiene permisos para eliminar mensajes
+    // Comprobar si el usuario tiene permisos para eliminar mensajes
     if (!interaction.member.permissions.has("ManageMessages")) {
       return interaction.reply({ content: "<:Advertencia:1302055825053057084> No tienes permisos para realizar esta acción.", flags: 64 , allowedMentions: { repliedUser: false }});
     }

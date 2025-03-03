@@ -19,11 +19,16 @@ export async function handleMessage(message, interaction, client) {
   // Timeout para eliminar los botones después de 5 minutos
   async function removeButtons(sentMessage) {
     setTimeout(async () => {
-      try {
-        await sentMessage.edit({ components: [] });
+      try {        
+        // Obtener el mensaje para comprobar si ya fue eliminado
+        const fetchedMessage = await sentMessage.channel.messages.fetch(sentMessage.id).catch(() => null);
+        if (!fetchedMessage) return;
+        
+        await fetchedMessage.edit({ components: [] });
       } catch (error) {
         console.error("Ha ocurrido un error al eliminar los botones:", error);
       }
+      // 5 minutos
     }, 5 * 60 * 1000);
   }
   
@@ -40,13 +45,13 @@ export async function handleMessage(message, interaction, client) {
       break;
       
       // Dudas sobre la whitelist
-      case ["me agregan a la whitelist", "me agregas a la whitelist", "no estoy en la whitelist", "estar en la whitelist"].some(word => content.includes(word)):
+      case ["me agregan a la whitelist", "me agregen a la whitelist", "me agregas a la whitelist", "no estoy en la whitelist", "estar en la whitelist"].some(word => content.includes(word)):
       sentMessage = await message.reply({ content: "### <:Info:1345848332760907807> Como funciona la whitelist:\nAl tratarse de un servidor no premium, la whitelist no funcionará correctamente únicamente con tu nick de jugador, para garantizar tu ingreso asegúrate de estar disponible a la vez que un administrador del servidor para que pueda apagar la whitelist temporalmente y así permitir tu ingreso.\n### Pedimos diculpas por los inconvenientes y posibles largos tiempos de espera.", components: [actionRow], allowedMentions: { repliedUser: false } });
       removeButtons(sentMessage);
       break;
       
       // Evitar mensajes molestos
-      case ["dead chat", "chat muerto", "dead server", "server muerto", "servidor muerto", "revivan el server", "murio el chat"].some(word => content.includes(word)): 
+      case ["dead chat", "chat muerto", "dead server", "server muerto", "servidor muerto", "sv muerto", "revivan el server", "murio el chat"].some(word => content.includes(word)): 
       sentMessage = await message.reply({ content: '### <:Info:1345848332760907807> Por favor, no vengas a decir "dead chat" o variedades.\nSolo estás incomodando y acabando con cualquier tema de conversación, en lugar de quejarte como tonto, opta por crear un tema de conversación nuevo o continuar con uno anterior, verás que es mucho más efectivo y ayudas a crear la actividad que estás buscando.', components: [actionRow], allowedMentions: { repliedUser: false } });
       removeButtons(sentMessage);
       break;
