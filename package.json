@@ -10,15 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.65",
     "axios": "^1.7.9",
     "cron": "^3.3.2",
     "discord.js": "^14.17.2",
     "dotenv": "^16.4.7",
-    "fs": "^0.0.2",
-    "mysql": "^2.18.1",
-    "twemoji-parser": "^14.0.0",
-    "undici": "^7.2.0"
+    "fs": "^0.0.2"
   },
   "type": "module"
 }

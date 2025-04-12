@@ -4,7 +4,7 @@ import { pathToFileURL } from "url";
 import path from "path";
 
 // Importación de eventos
-import { checkPendingBumps } from './events/messageEvents/bumpreminder.js';
+// import { checkPendingBumps } from './events/messageEvents/bumpreminder.js';
 
 // Configuración y cliente de Discord
 const config = JSON.parse(readFileSync('./config.json'));
@@ -25,8 +25,8 @@ client.login(config.token).then(async () => {
   console.log("✅  - La aplicación está en línea.");
   
   // Esperar 5 segundos para asegurar que el cliente esté completamente inicializado
-  await new Promise(resolve => setTimeout(resolve, 5000));
-  checkPendingBumps(client);
+  // await new Promise(resolve => setTimeout(resolve, 5000));
+  // checkPendingBumps(client);
 });
 
 // Función para cargar comandos

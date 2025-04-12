@@ -20,13 +20,13 @@ export async function handleMessage(message, client) {
     case content.includes("rawr"):
     await message.react('<a:RawrAttack:1329113910376271943>');
     break;
-    
-    // Reaccionar con un emoji custom
-    case content.includes("hello world!"):
-    await message.react('<:SmugVanilla:1324462261498286130>');
+
+    // Chicken jockey
+    case content.includes("chicken jockey"):
+    await message.react("🔥");
     break;
     
-    // Reaccionar con un emoji preterminado
+    // Easter egg
     case content.includes("easter egg"):
     await message.react("🥚");
     break;

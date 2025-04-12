@@ -5,7 +5,3 @@ Este es el código del proyecto de un bot para Discord que no hace casi nada, pe
 
 # Cargar comandos a los servidores
     node .\deploy-commands.js
-
-# Sin terminar:
-    - characterAI.js
-    - brawlstarsplayer.js

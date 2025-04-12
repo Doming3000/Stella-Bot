@@ -10,18 +10,18 @@ export const data = new SlashCommandBuilder()
 );
 
 // función auxiliar para enviar la confirmación de mensaje y eliminarla después de un tiempo
-async function sendConfirmation(interaction, message = 'Mensaje enviado!') {
-  const reply = await interaction.reply({ content: message, flags: 64 });
+async function sendConfirmation(interaction) {
+  const reply = await interaction.reply({ content: "Mensaje enviado!", flags: 64 });
   
-  // Eliminar la confirmación después de 3 segundos
-  setTimeout(() => reply.delete(), 3000);
+  // Eliminar la confirmación después de 1 segundo
+  setTimeout(() => reply.delete(), 1000);
 }
 
 export async function run(client, interaction) {
   const contenido = interaction.options.getString('contenido');
   
   // Registrar en la consola al usuario que ejecutó el comando
-  console.log(`📃  - ${interaction.user.tag} | ${interaction.user.id} usó /say: ${contenido}.`);
+  console.log(`📃  - /say ejecutado por ${interaction.user.tag} | ${interaction.user.id}: ${contenido}`);
   
   // Comprobar si existe un canal de interacción; si no, se asume que es un mensaje directo
   if (!interaction.channel) {
