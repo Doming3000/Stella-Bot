@@ -10,7 +10,6 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
-// Función principal que se ejecuta cuando el comando es llamado.
 export async function run(client, interaction) {
   const nombre = interaction.options.getString('nombre');
   const caracteres = nombre.length;
@@ -25,7 +24,7 @@ export async function run(client, interaction) {
   
   try {
     // Indicar que se está procesando la solicitud
-    await interaction.deferReply({ allowedMentions: { repliedUser: false }});
+    await interaction.deferReply();
     
     // Realizar una solicitud HTTP GET a la API usando axios.
     const response = await axios.get(mojangPlayerApi);

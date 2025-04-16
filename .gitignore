@@ -1,4 +1,4 @@
 /assets
 /.env
-/config.json
+/blacklist.json
 /package-lock.json

@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 
 export const name = 'messageCreate';
 
-// Esta función ejecutará todos los manejadores de `messageEvents`
+// Función para manejar los messageEvents
 export async function execute(message, interaction, client) {
   const handlerFiles = await fs.readdir(new URL('./messageEvents', import.meta.url));
   

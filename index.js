@@ -1,13 +1,13 @@
 import { Client, GatewayIntentBits, Collection } from "discord.js";
-import { readdirSync, readFileSync } from "fs";
 import { pathToFileURL } from "url";
+import { readdirSync } from "fs";
+import dotenv from 'dotenv';
 import path from "path";
 
-// Importación de eventos
-// import { checkPendingBumps } from './events/messageEvents/bumpreminder.js';
+// Cargar variables de entorno
+dotenv.config();
 
 // Configuración y cliente de Discord
-const config = JSON.parse(readFileSync('./config.json'));
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -20,13 +20,10 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Iniciar sesión con el token desde config.json
-client.login(config.token).then(async () => {
+// Iniciar sesión mediante el token
+const token = process.env.TOKEN;
+client.login(token).then(() => {
   console.log("✅  - La aplicación está en línea.");
-  
-  // Esperar 5 segundos para asegurar que el cliente esté completamente inicializado
-  // await new Promise(resolve => setTimeout(resolve, 5000));
-  // checkPendingBumps(client);
 });
 
 // Función para cargar comandos
