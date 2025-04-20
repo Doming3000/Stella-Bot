@@ -11,7 +11,7 @@ export async function run(client, interaction) {
     await interaction.deferReply();
     
     // Esto no funciona, corregir por valor real una vez la api esté desplegada.
-    const { data } = await axios.get('https://tumangaonline-api.herokuapp.com/api/v1/manga/populares');
+    const {data} = await axios.get('https://tumangaonline-api.herokuapp.com/api/v1/manga/populares');
     
     // Comprobar si hay elementos
     if (!data.data || data.data.length === 0) {
