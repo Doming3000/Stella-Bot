@@ -128,20 +128,25 @@ export async function run(client, interaction) {
     
     // Finalizar colector
     collector.on('end', async () => {
-      // Obtener mensaje original
-      const message = await interaction.fetchReply();
-      
-      // Desactivar todos los botones
-      const disabledComponents = message.components.map(row => {
-        const newRow = ActionRowBuilder.from(row);
-        newRow.components = row.components.map(component => 
-          ButtonBuilder.from(component).setDisabled(true)
-        );
-        return newRow;
-      });
-      
-      // Editar mensaje original con los botones desactivados
-      await interaction.editReply({ components: disabledComponents });
+      try {
+        // Obtener mensaje original
+        const message = await interaction.fetchReply();
+        
+        // Desactivar todos los botones
+        const disabledComponents = message.components.map(row => {
+          const newRow = ActionRowBuilder.from(row);
+          newRow.components = row.components.map(component => 
+            ButtonBuilder.from(component).setDisabled(true)
+          );
+          return newRow;
+        });
+        
+        // Editar mensaje original con los botones desactivados
+        await interaction.editReply({ components: disabledComponents });
+      } catch (error) {
+        // Si da error, puede deberse a que el mensaje se eliminó.
+        return;
+      }
     });
   } catch (error) {
     console.error(error);
