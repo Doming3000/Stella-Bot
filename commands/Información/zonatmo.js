@@ -1,14 +1,31 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import axios from "axios";
 
 export const data = new SlashCommandBuilder()
 .setName('zonatmo')
-.setDescription('Se conecta a ZonaTMO para obtener información de mangas.')
-.addStringOption(option =>
-  option.setName('url')
-  .setDescription('URL del manga.')
-  .setRequired(true)
+.setDescription('Muestra información de un manga de ZonaTMO.')
+.addSubcommand(sub =>
+  sub
+  .setName('search-url')
+  .setDescription('Muestra información de un manga de ZonaTMO por medio de la URL.')
+  .addStringOption(opt =>
+    opt
+    .setName('url')
+    .setDescription('URL del manga. Ejemplo: https://zonatmo.com/library/manga/23741/dr-stone')
+    .setRequired(true)
+  )
 )
+.addSubcommand(sub =>
+  sub
+  .setName('search-title')
+  .setDescription('Busca un manga en ZonaTMO por medio del título.')
+  .addStringOption(opt =>
+    opt
+    .setName('title')
+    .setDescription('Título del manga. Ejemplo: Dr. Stone')
+    .setRequired(true)
+  )
+);
 
 // Función para verificar si la URL es válida (para este contexto)
 function isValidURL(url) {
@@ -36,122 +53,212 @@ function countChapters(listaCapitulos) {
   return numerosUnicos.size;
 }
 
-export async function run(client, interaction) {
-  const url = interaction.options.getString('url');
-  
-  // Verificar si el valor proporcionado es una URL válida.
-  if (!isValidURL(url)) {
-    await interaction.reply({ content: "<:Advertencia:1302055825053057084> Debes proporcionar una URL de ZonaTMO válida.\nEjemplo: `https://zonatmo.com/library/manga/23741/dr-stone`", flags: 64, allowedMentions: { repliedUser: false }});
+// Función para desactivar componentes
+async function disableComponents(interaction) {
+  try {
+    const message = await interaction.fetchReply();
+    
+    const disabledComponents = message.components.map(row => {
+      const newRow = ActionRowBuilder.from(row);
+      newRow.components = row.components.map(component => {
+        // Botones
+        if (component.type === 2) {
+          const newButton = ButtonBuilder.from(component);
+          // Mantener activos los botones de tipo enlace
+          if (newButton.data.style !== 5) {
+            newButton.setDisabled(true);
+          }
+          return newButton;
+        }
+        
+        // Select menus
+        if (component.type === 3) {
+          return StringSelectMenuBuilder.from(component).setDisabled(true);
+        }
+        
+        // Otros componentes
+        return component;
+      });
+      return newRow;
+    });
+    
+    await interaction.editReply({ components: disabledComponents });
+  } catch (error) {
+    // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
     return;
   }
+}
+
+export async function run(client, interaction) {
+  const subcommand = interaction.options.getSubcommand();
   
-  try {
-    // Indicar que se está procesando la solicitud
-    await interaction.deferReply();
+  // Lógica para manejar la URL
+  if (subcommand === 'search-url') {
+    const url = interaction.options.getString('url');
     
-    // Realizar una solicitud HTTP GET a la API usando axios.
-    const { data } = await axios.get(`https://tumangaonlineapi-production.up.railway.app/api/v1/manga/info`, { params: { mangaUrl: url }});
-    const manga = data.data;
-    
-    // Comprobar si hay resultados que mostrar
-    if (!manga) {
-      return interaction.editReply({ content: "<:Advertencia:1302055825053057084> No se encontró información del manga.", allowedMentions: { repliedUser: false }});
+    // Verificar si el valor proporcionado es una URL válida.
+    if (!isValidURL(url)) {
+      await interaction.reply({ content: "<:Advertencia:1302055825053057084> Debes proporcionar una URL de ZonaTMO válida.\nEjemplo: `https://zonatmo.com/library/manga/23741/dr-stone`", flags: 64, allowedMentions: { repliedUser: false }});
+      return;
     }
     
-    // Limpiar nombre
-    const cleanedTitle = manga.title.replace(/\s+/g, ' ').trim();
-    
-    // Limpiar géneros
-    const genres = (manga.generos || []).map(genre => genre.trim()).join(', ');
-    
-    // Embed principal
-    const embed = new EmbedBuilder()
-    .setColor(0x7986cb)
-    .setAuthor({
-      name: `${client.user.username} - ${interaction.commandName}`,
-      iconURL: client.user.displayAvatarURL()
-    })
-    .setTitle(cleanedTitle.length > 70 ? cleanedTitle.slice(0, 67) + "..." : cleanedTitle)
-    .setDescription(manga.descripcion ? (manga.descripcion.length > 500 ? manga.descripcion.slice(0, 497) + "..." : manga.descripcion) : 'Sinopsis no disponible.')
-    .setImage(manga.image || null)
-    .addFields(
-      { name: "📚 - Géneros", value: genres + "." || "Desconocido", inline: false },
-      { name: "💻 - Estado", value: manga.estado || "Desconocido", inline: true },
-      { name: "🌏 - Demografía", value: manga.demografia || "Desconocido", inline: true },
-      { name: "🔖 - Capítulos", value: manga.capitulo ? countChapters(manga.capitulo).toString() : "0", inline: true },
-    )
-    .setFooter({ text: "Información obtenida de ZonaTMO" });
-    
-    // Contenedor de botones
-    const actionRow = new ActionRowBuilder()
-    .addComponents(
-      // Botón de suscripción
-      new ButtonBuilder()
-      .setCustomId("subscribe")
-      .setEmoji("🔔")
-      .setLabel("Suscribirse")
-      .setStyle("Primary"),
+    try {
+      // Indicar que se está procesando la solicitud
+      await interaction.deferReply();
       
-      // Botón para abrir en el navegador
-      new ButtonBuilder()
-      .setEmoji("🌐")
-      .setLabel("Abrir en el navegador")
-      .setURL(url)
-      .setStyle("Link"),
-    );
-    
-    // Enviar mensaje
-    await interaction.editReply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
-    
-    // Evento del colector
-    const filter = i => i.customId === 'subscribe';
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000 });
-    
-    collector.on('collect', async (i) => {
+      // Realizar una solicitud HTTP GET a la API usando axios.
+      const { data } = await axios.get(`https://tumangaonlineapi-production.up.railway.app/api/v1/manga/info`, { params: { mangaUrl: url }});
+      const manga = data.data;
+      
+      // Comprobar si hay resultados que mostrar
+      if (!manga) {
+        return interaction.editReply({ content: "<:Advertencia:1302055825053057084> No se encontró información del manga.", allowedMentions: { repliedUser: false }});
+      }
+      
+      // Formatear géneros
+      const genres = (manga.generos || []).map(genre => genre.trim()).join(', ');
+      
+      // Embed de la información
+      const embed = new EmbedBuilder()
+      .setColor(0x7986cb)
+      .setAuthor({
+        name: `${client.user.username} - ${interaction.commandName}`,
+        iconURL: client.user.displayAvatarURL()
+      })
+      .setTitle(manga.title.length > 70 ? manga.title.slice(0, 67) + "..." : manga.title)
+      .setDescription(manga.descripcion ? (manga.descripcion.length > 500 ? manga.descripcion.slice(0, 497) + "..." : manga.descripcion) : 'Sinopsis no disponible.')
+      .setImage(manga.image || null)
+      .addFields(
+        { name: "📚 - Géneros", value: genres + "." || "Desconocido", inline: false },
+        { name: "💻 - Estado", value: manga.estado || "Desconocido", inline: true },
+        { name: "🌏 - Demografía", value: manga.demografia || "Desconocido", inline: true },
+        { name: "🔖 - Capítulos", value: manga.capitulo ? countChapters(manga.capitulo).toString() : "0", inline: true },
+      )
+      .setFooter({ text: "Información obtenida de ZonaTMO" });
+      
+      // Contenedor de botones
+      const actionRow = new ActionRowBuilder()
+      .addComponents(
+        // Botón de suscripción
+        new ButtonBuilder()
+        .setCustomId("subscribe")
+        .setEmoji("🔔")
+        .setLabel("Suscribirse")
+        .setStyle("Primary"),
+        
+        // Botón para abrir en el navegador
+        new ButtonBuilder()
+        .setEmoji("🌐")
+        .setLabel("Abrir en el navegador")
+        .setURL(url)
+        .setStyle("Link"),
+      );
+      
+      // Enviar mensaje
+      await interaction.editReply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
+      
+      // Evento del colector
+      const filter = i => i.customId === 'subscribe';
+      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000 });
+      
       // Variable para almacenar los usuarios que han hecho clic en el botón
       const clickedUsers = new Set();
       
-      // Comprobar si el usuario ya se suscribió
-      if (clickedUsers.has(i.user.id)) {
-        await i.reply({ content: '<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.', flags: 64 });
+      collector.on('collect', async (i) => {
+        // Comprobar si el usuario ya se suscribió
+        if (clickedUsers.has(i.user.id)) {
+          await i.reply({ content: '<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.', flags: 64 });
+          return;
+        }
+        
+        // Procesar la suscripción
+        await i.reply({ content: '<:Done:1326292171099345006> ¡Hecho! Revisa tus mensajes directos. (Sin terminar)', flags: 64 });
+        clickedUsers.add(i.user.id);
+      });
+      
+      // Finalizar colector
+      collector.on('end', async () => {
+        await disableComponents(interaction);
+      });      
+    } catch (error) {
+      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
+      console.log(error);
+    }
+  }
+  
+  // Lógica para manejar la búsqueda por nombre
+  if (subcommand === 'search-title') {
+    const title = interaction.options.getString('title');
+    
+    try {
+      // Indicar que se está procesando la solicitud
+      await interaction.deferReply();
+      
+      // Realizar una solicitud HTTP GET a la API usando axios.
+      const { data } = await axios.get(`https://tumangaonlineapi-production.up.railway.app/api/v1/manga/library`, { params: { title }});
+      
+      // Comprobar si hay resultados
+      if (!data || !data.data?.length) {
+        interaction.editReply({ content: "<:Advertencia:1302055825053057084> No se han encontrado resultados para esta búsqueda.", allowedMentions: { repliedUser: false }});
         return;
       }
       
-      // Procesar la suscripción
-      await i.reply({ content: '<:Done:1326292171099345006> ¡Hecho! Revisa tus mensajes directos. (Sin terminar)', flags: 64 });
-      clickedUsers.add(i.user.id);
-    });
-    
-    // Finalizar colector
-    collector.on('end', async () => {
-      try {
-        // Obtener mensaje original
-        const message = await interaction.fetchReply();
-        
-        // Desactivar los botones
-        const disabledComponents = message.components.map(row => {
-          const newRow = ActionRowBuilder.from(row);
-          newRow.components = row.components.map(component => {
-            const newButton = ButtonBuilder.from(component);
-            
-            // Mantener activos los botones de tipo enlace
-            if (newButton.data.style !== 5) {
-              newButton.setDisabled(true);
-            }
-            return newButton;
-          });
-          return newRow;
-        });
-        
-        // Editar mensaje original con los botones desactivados
-        await interaction.editReply({ components: disabledComponents });
-      } catch (error) {
-        // Si da error, puede deberse a que el mensaje se eliminó.
-        return;
+      // Limitar solo a los 10 primeros resultados
+      const results = data.data.slice(0, 10);
+      
+      // Embed de resultados
+      const embed = new EmbedBuilder()
+      .setColor(0x7986cb)
+      .setAuthor({
+        name: `${client.user.username} - ${interaction.commandName}`,
+        iconURL: client.user.displayAvatarURL()
+      })
+      .setTitle(`Resultados de búsqueda para: "${title}"`)
+      .setDescription(
+        results.map((m, i) => {
+          const shortTitle = m.title.length > 50 ? m.title.slice(0, 47) + "..." : m.title;
+          return `**${i + 1}.** [${shortTitle}](${m.mangaUrl}) - ${m.type}`;
+        }).join('\n')
+      )
+      
+      if (data.data.length > 10) {
+        embed.setFooter({ text: 'Solo se muestran los 10 primeros resultados del sitio.' });
       }
-    });
-  } catch (error) {
-    interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
-    console.log(error);
+      
+      // Menú de selección
+      const selectOptions = results.map((manga) => ({
+        label: manga.title.length > 25 ? manga.title.slice(0, 22) + '...' : manga.title,
+        description: manga.type,
+        value: manga.mangaUrl
+      }));
+      
+      const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('selectManga')
+      .setPlaceholder('Selecciona un manga de la lista')
+      .addOptions(selectOptions);
+      
+      const actionRow = new ActionRowBuilder().addComponents(selectMenu);
+      
+      // Envíar mensaje
+      await interaction.editReply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
+      
+      // Evento del colector
+      const filter = i => i.customId === 'selectManga' && i.user.id === interaction.user.id;
+      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000, max: 1 });
+      
+      collector.on('collect', async i => {
+        await i.reply({ content: `Elegiste: ${i.values[0]}`, ephemeral: true });
+        // Pendiente, lógica real para mostrar la información del manga seleccionado
+      });
+      
+      // Finalizar colector
+      collector.on('end', async () => {
+        await disableComponents(interaction);
+      });
+    }
+    catch (error) {
+      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
+      console.log(error);
+    }
   }
 }
