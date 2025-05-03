@@ -56,7 +56,7 @@ function countChapters(listaCapitulos) {
 // Función para mostrar información del manga
 async function showInfoManga(client, interaction, manga, url) {
   // Formatear géneros
-  const genres = (manga.generos || []).map(genre => genre.trim()).join(', ');
+  const genres = (manga.genres || []).map(genre => genre.trim()).join(', ');
   
   // Embed de la información
   const embed = new EmbedBuilder()
@@ -65,14 +65,14 @@ async function showInfoManga(client, interaction, manga, url) {
     name: `${client.user.username} - ${interaction.commandName}`,
     iconURL: client.user.displayAvatarURL()
   })
-  .setTitle(manga.title.length > 70 ? manga.title.slice(0, 67) + "..." : manga.title + " - " + manga.tipo)
-  .setDescription(manga.descripcion ? (manga.descripcion.length > 500 ? manga.descripcion.slice(0, 497) + "..." : manga.descripcion) : 'Sinopsis no disponible.')
+  .setTitle(manga.title.length > 70 ? manga.title.slice(0, 67) + "..." : manga.title + " - " + manga.type)
+  .setDescription(manga.synopsis ? (manga.synopsis.length > 500 ? manga.synopsis.slice(0, 497) + "..." : manga.synopsis) : 'Sinopsis no disponible.')
   .setImage(manga.image || null)
   .addFields(
     { name: "📚 - Géneros", value: genres + "." || "Desconocido", inline: false },
-    { name: "💻 - Estado", value: manga.estado || "Desconocido", inline: true },
-    { name: "🌏 - Demografía", value: manga.demografia || "Desconocido", inline: true },
-    { name: "🔖 - Capítulos", value: manga.capitulo ? countChapters(manga.capitulo).toString() : "0", inline: true },
+    { name: "💻 - Estado", value: manga.status || "Desconocido", inline: true },
+    { name: "🌏 - Demografía", value: manga.demography || "Desconocido", inline: true },
+    { name: "🔖 - Capítulos", value: manga.chapters ? countChapters(manga.chapters).toString() : "0", inline: true },
   )
   .setFooter({ text: "Información obtenida de ZonaTMO" });
   
@@ -114,10 +114,20 @@ async function showInfoManga(client, interaction, manga, url) {
     // Procesar la suscripción
     try {
       // Enviar mensaje directo al usuario
-      await i.user.send({ content: "Te has suscrito a: " + manga.title + " (sin terminar)" });
+      const embed = new EmbedBuilder()
+      .setColor(0x779ecb)
+      .setAuthor({
+        name: `${client.user.username} - ${interaction.commandName}`,
+        iconURL: client.user.displayAvatarURL()
+      })
+      .setTitle(`Confirmar la suscripción a ${manga.title}`)
+      .setDescription("Recibirás notificaciones cada vez que se publique un nuevo capitulo.")
+      .setThumbnail(manga.image || null)
+      
+      await i.user.send({ embeds: [embed], allowedMentions: { repliedUser: false }});
       
       // Confirmar la interacción y registrar al usuario como suscrito
-      await i.reply({ content: "<:Done:1326292171099345006> Te has suscrito a: " + manga.title + " (sin terminar).", flags: 64, allowedMentions: { repliedUser: false }});
+      await i.reply({ content: "<:Done:1326292171099345006> **¡Hecho!** Revisa tus mensajes directos", flags: 64, allowedMentions: { repliedUser: false }});
       clickedUsers.add(i.user.id);
     } catch (error) {
       await i.reply({ content: '<:Advertencia:1302055825053057084> No se ha podido enviar DM. ¿Tienes los mensajes directos activados?', flags: 64, allowedMentions: { repliedUser: false }});
