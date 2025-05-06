@@ -30,7 +30,12 @@ export async function run(client, interaction) {
   }
   
   // Generar el código QR y envíar el mensaje
-  const qrCode = await qrcode.toDataURL(url);
+  const qrCode = await qrcode.toDataURL(url, {
+    errorCorrectionLevel: 'H',
+    scale: 10,
+    margin: 4
+  });
+  
   const base64Data = qrCode.replace(/^data:image\/png;base64,/, "");
   const imageBuffer = Buffer.from(base64Data, "base64");
   
