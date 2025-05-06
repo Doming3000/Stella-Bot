@@ -86,9 +86,15 @@ async function showInfoManga(client, interaction, manga, url) {
     .setLabel("Suscribirse")
     .setStyle("Primary"),
     
+    // Botón para leer el primer capítulo
+    new ButtonBuilder()
+    .setCustomId("readChapter")
+    .setEmoji("📖")
+    .setLabel("Leer el primer capitulo")
+    .setStyle("Secondary"),
+    
     // Botón para abrir en el navegador
     new ButtonBuilder()
-    .setEmoji("🌐")
     .setLabel("Abrir en el navegador")
     .setURL(url)
     .setStyle("Link"),
@@ -98,40 +104,103 @@ async function showInfoManga(client, interaction, manga, url) {
   await interaction.editReply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
   
   // Evento del colector
-  const filter = i => i.customId === 'subscribe';
+  const filter = i => (i.customId === 'subscribe' || i.customId === 'readChapter') && i.user.id === interaction.user.id;
   const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000 });
   
   // Variable para almacenar los usuarios que han hecho clic en el botón
   const clickedUsers = new Set();
   
   collector.on('collect', async (i) => {
-    // Comprobar si el usuario ya se suscribió
-    if (clickedUsers.has(i.user.id)) {
-      await i.reply({ content: '<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.', flags: 64, allowedMentions: { repliedUser: false }});
-      return;
+    if (i.customId === 'subscribe') {
+      // Comprobar si el usuario ya se suscribió
+      if (clickedUsers.has(i.user.id)) {
+        await i.reply({ content: '<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.', flags: 64, allowedMentions: { repliedUser: false }});
+        return;
+      }
+      
+      // Procesar la suscripción
+      try {
+        // Embed de confirmación
+        const embed = new EmbedBuilder()
+        .setColor(0x779ecb)
+        .setAuthor({
+          name: `${client.user.username} - ${interaction.commandName}`,
+          iconURL: client.user.displayAvatarURL()
+        })
+        .setTitle(`Confirmar la suscripción a ${manga.title}`)
+        .setDescription("Recibirás notificaciones cada vez que se publique un nuevo capitulo.")
+        .setThumbnail(manga.image)
+        .setFooter({ text: "Las notificaciones no son puntuales." });
+        
+        // Contenedor de botones
+        const actionRow = new ActionRowBuilder()
+        .addComponents(
+          // Botón de confirmación
+          new ButtonBuilder()
+          .setCustomId("confirmSubscription")
+          .setEmoji("<:Done:1326292171099345006>")
+          .setLabel("Confirmar")
+          .setStyle("Success")
+        );
+        
+        // Enviar DM
+        await i.user.send({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
+        
+        // Confirmar la interacción y registrar al usuario como suscrito
+        await i.reply({ content: "<:Done:1326292171099345006> **¡Hecho!** Revisa tus mensajes directos.", flags: 64, allowedMentions: { repliedUser: false }});
+        clickedUsers.add(i.user.id);
+      } catch (error) {
+        await i.reply({ content: '<:Advertencia:1302055825053057084> No se ha podido enviar DM. ¿Tienes los mensajes directos activados?', flags: 64, allowedMentions: { repliedUser: false }});
+        console.log(error);
+      }
     }
     
-    // Procesar la suscripción
-    try {
-      // Enviar mensaje directo al usuario
-      const embed = new EmbedBuilder()
-      .setColor(0x779ecb)
-      .setAuthor({
-        name: `${client.user.username} - ${interaction.commandName}`,
-        iconURL: client.user.displayAvatarURL()
-      })
-      .setTitle(`Confirmar la suscripción a ${manga.title}`)
-      .setDescription("Recibirás notificaciones cada vez que se publique un nuevo capitulo.")
-      .setThumbnail(manga.image || null)
-      
-      await i.user.send({ embeds: [embed], allowedMentions: { repliedUser: false }});
-      
-      // Confirmar la interacción y registrar al usuario como suscrito
-      await i.reply({ content: "<:Done:1326292171099345006> **¡Hecho!** Revisa tus mensajes directos", flags: 64, allowedMentions: { repliedUser: false }});
-      clickedUsers.add(i.user.id);
-    } catch (error) {
-      await i.reply({ content: '<:Advertencia:1302055825053057084> No se ha podido enviar DM. ¿Tienes los mensajes directos activados?', flags: 64, allowedMentions: { repliedUser: false }});
-      console.log(error);
+    else if (i.customId === 'readChapter') {
+      try {
+        // Clonar los componentes originales para desactivar el botón
+        const oldComponents = i.message.components.map(row => {
+          const newRow = new ActionRowBuilder();
+          newRow.addComponents(
+            row.components.map(button => {
+              const newButton = ButtonBuilder.from(button);
+              if (newButton.data.custom_id === 'readChapter') {
+                newButton.setDisabled(true);
+              }
+              return newButton;
+            })
+          );
+          return newRow;
+        });
+        
+        // Editar el mensaje original con el botón desactivado
+        await i.message.edit({ components: oldComponents });
+        
+        // Realizar una solicitud HTTP GET a la API usando axios.
+        const { data } = await axios.get(`https://tumangaonlineapi-production.up.railway.app/api/capitulo`, { params: { url: url, cap: 1 }});
+        
+        // Comprobar si hay resultados
+        if (!data || !data.data || data.data.length === 0) {
+          return await i.reply({ content: "<:Advertencia:1302055825053057084> No se encontraron enlaces para el primer capítulo.", flags: 64, allowedMentions: { repliedUser: false }});
+        }
+        
+        // Limitar a los primeros 5 resultados
+        const scans = data.data.slice(0, 5);
+        
+        // Crear botones de tipo enlace
+        const buttons = scans.map(scan =>
+          new ButtonBuilder()
+          .setLabel(scan.scan.length > 80 ? scan.scan.slice(0, 77) + '...' : scan.scan)
+          .setStyle("Link")
+          .setURL(scan.urlRead)
+        );
+        
+        const actionRow = new ActionRowBuilder().addComponents(buttons);
+        
+        await i.reply({ content: "**Seleccione una opción:**", components: [actionRow], allowedMentions: { repliedUser: false }});
+      } catch (error) {
+        await i.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al obtener los enlaces del capítulo.", allowedMentions: { repliedUser: false }});
+        console.error(error);
+      }
     }
   });
   
@@ -271,7 +340,7 @@ export async function run(client, interaction) {
       
       // Evento del colector
       const filter = i => i.customId === 'selectManga' && i.user.id === interaction.user.id;
-      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000, max: 1 });
+      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 2 * 60 * 1000, max: 1 })
       
       collector.on('collect', async i => {
         try {
