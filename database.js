@@ -16,11 +16,21 @@ const pool = mysql.createPool({
 // Función para realizar consultas
 export function query(sql, params = []) {
   return new Promise((resolve, reject) => {
-    pool.query(sql, params, (err, results) => {
-      if (err) {
-        return reject(err);
+    pool.query(sql, params, (error, results) => {
+      if (error) {
+        return reject(error);
       }
       resolve(results);
     });
   });
 }
+
+// Función para comprobar la conexión al iniciar
+pool.getConnection((error, connection) => {
+  if (error) {
+    console.error('❌  - No se pudo conectar a la base de datos:', error.message);
+  } else {
+    console.log('✅  - La base de datos está conectada.');
+    connection.release(); // Liberar la conexión después de probar
+  }
+});

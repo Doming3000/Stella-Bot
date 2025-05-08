@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
+import { query } from "../../database.js";
 import axios from "axios";
 
 export const data = new SlashCommandBuilder()
@@ -53,6 +54,64 @@ function countChapters(listaCapitulos) {
   return numerosUnicos.size;
 }
 
+// Función para obtener el último capítulo
+function getLastChapterNumber(chaptersArray) {
+  if (!Array.isArray(chaptersArray) || chaptersArray.length === 0) return null;
+  // Obtener el capítulo más reciente
+  const title = chaptersArray[0].Title;
+  
+  // Extraer el número
+  const match = title.match(/Cap[ií]tulo\s+([\d.]+)/i);
+  return match ? match[1] : null;
+}
+
+// Función para desactivar componentes
+async function disableComponents(target) {
+  try {
+    let message;
+    if (typeof target.fetchReply === 'function') {
+      // Si es una interacción: editReply necesita fetchReply + editReply
+      message = await target.fetchReply();
+    } else {
+      // Si es un mensaje
+      message = target;
+    }
+    
+    // Construir los nuevos ActionRows con los componentes deshabilitados
+    const disabled = message.components.map(row => {
+      const newRow = ActionRowBuilder.from(row);
+      newRow.components = row.components.map(comp => {
+        // Botones
+        if (comp.type === 2) {
+          const btn = ButtonBuilder.from(comp);
+          // Mantener activos los botones de tipo enlace
+          if (btn.data.style !== 5) btn.setDisabled(true);
+          return btn;
+        }
+        // Select menus 
+        if (comp.type === 3) {
+          return StringSelectMenuBuilder.from(comp).setDisabled(true);
+        }
+        // Mantener otros componentes por si acaso
+        return comp;
+      });
+      return newRow;
+    });
+    
+    // Actualizar el mensaje
+    if (message.edit) {
+      // Mensaje normal o reply diferido
+      await message.edit({ components: disabled });
+    } else {
+      // Fallback para Interactions viejas
+      await target.editReply({ components: disabled });
+    }
+  } catch (error) {
+    // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
+    return;
+  }
+}
+
 // Función para mostrar información del manga
 async function showInfoManga(client, interaction, manga, url) {
   // Formatear géneros
@@ -105,21 +164,48 @@ async function showInfoManga(client, interaction, manga, url) {
   
   // Evento del colector
   const filter = i => (i.customId === 'subscribe' || i.customId === 'readChapter') && i.user.id === interaction.user.id;
-  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000 });
+  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 2 * 60 * 1000 });
   
-  // Variable para almacenar los usuarios que han hecho clic en el botón
-  const clickedUsers = new Set();
+  const clickedUsers = new Set(); // Usuarios que hicieron click en el botón
+  const alreadySubscribedUsers = new Set(); // Usuarios que ya estaban suscritos
   
   collector.on('collect', async (i) => {
     if (i.customId === 'subscribe') {
-      // Comprobar si el usuario ya se suscribió
-      if (clickedUsers.has(i.user.id)) {
-        await i.reply({ content: '<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.', flags: 64, allowedMentions: { repliedUser: false }});
+      // Comprobar si el manga ya está finalizado
+      if (manga.status === "Finalizado") {
+        await i.reply({ content: "<:Advertencia:1302055825053057084> No puedes suscribirte a un manga ya finalizado.", flags: 64, allowedMentions: { repliedUser: false }});
+        return;
+      }
+      
+      // Comprobar si el usuario ya hizo click en el botón
+      else if (clickedUsers.has(i.user.id)) {
+        await i.reply({ content: "<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.", flags: 64, allowedMentions: { repliedUser: false }});
+        return;
+      }
+      
+      // Comprobar si el usuario ya estaba suscrito
+      else if (alreadySubscribedUsers.has(i.user.id)) {
+        await i.reply({ content: "<:Advertencia:1302055825053057084> Ya estás suscrito a este manga.", flags: 64, allowedMentions: { repliedUser: false }});
         return;
       }
       
       // Procesar la suscripción
+      let existing = [];
       try {
+        try {
+          existing = await query("SELECT 1 FROM mangasuscription WHERE userID = ? AND manga = ? LIMIT 1", [i.user.id, url]);
+        } catch (dbError) {
+          await i.reply({ content: "<:Advertencia:1302055825053057084> No se pudo verificar tu suscripción. Inténtalo de nuevo más tarde.", flags: 64, allowedMentions: { repliedUser: false }});
+          console.error("Database Error:", dbError);
+          return;
+        }
+        
+        if (existing.length > 0) {
+          alreadySubscribedUsers.add(i.user.id);
+          await i.reply({ content: "<:Advertencia:1302055825053057084> Ya estás suscrito a este manga.", flags: 64, allowedMentions: { repliedUser: false }});
+          return;
+        }
+        
         // Embed de confirmación
         const embed = new EmbedBuilder()
         .setColor(0x779ecb)
@@ -135,7 +221,6 @@ async function showInfoManga(client, interaction, manga, url) {
         // Contenedor de botones
         const actionRow = new ActionRowBuilder()
         .addComponents(
-          // Botón de confirmación
           new ButtonBuilder()
           .setCustomId("confirmSubscription")
           .setEmoji("<:Done:1326292171099345006>")
@@ -144,13 +229,41 @@ async function showInfoManga(client, interaction, manga, url) {
         );
         
         // Enviar DM
-        await i.user.send({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
+        const dmMessage = await i.user.send({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false } });
+        
+        // Para evitar errores
+        if (i.replied || i.deferred) return;
         
         // Confirmar la interacción y registrar al usuario como suscrito
         await i.reply({ content: "<:Done:1326292171099345006> **¡Hecho!** Revisa tus mensajes directos.", flags: 64, allowedMentions: { repliedUser: false }});
         clickedUsers.add(i.user.id);
+        
+        // Evento del colector
+        const collector = dmMessage.createMessageComponentCollector({ filter: btnInt => btnInt.customId === 'confirmSubscription' && btnInt.user.id === i.user.id, time: 60 * 1000 });
+        
+        collector.on('collect', async (i) => {
+          try {
+            // Desactivar el botón
+            collector.stop();
+            
+            // Registrar la suscripción en la base de datos
+            await query("INSERT INTO mangasuscription (userID, manga, status, lastChapter) VALUES (?, ?, ?, ?)", [i.user.id, url, manga.status, getLastChapterNumber(manga.chapters)]);
+            
+            // Confirmar la interacción.
+            await i.reply({ content: `<:Done:1326292171099345006> **¡Hecho!** Te has suscrito a ${manga.title}.`, allowedMentions: { repliedUser: false }});
+            
+          } catch (dbError) {
+            await i.reply({ content: "<:Advertencia:1302055825053057084> No se pudo registrar la suscripción. Inténtalo de nuevo más tarde.", flags: 64, allowedMentions: { repliedUser: false }});
+            console.log(dbError);
+          }
+        });
+        
+        // Finalizar colector
+        collector.on('end', async () => {
+          await disableComponents(dmMessage);
+        });
       } catch (error) {
-        await i.reply({ content: '<:Advertencia:1302055825053057084> No se ha podido enviar DM. ¿Tienes los mensajes directos activados?', flags: 64, allowedMentions: { repliedUser: false }});
+        await i.followUp({ content: '<:Advertencia:1302055825053057084> No se ha podido enviar DM. ¿Tienes los mensajes directos activados?', flags: 64, allowedMentions: { repliedUser: false }});
         console.log(error);
       }
     }
@@ -186,6 +299,9 @@ async function showInfoManga(client, interaction, manga, url) {
         // Limitar a los primeros 5 resultados
         const scans = data.data.slice(0, 5);
         
+        // Texto por si hay mas de 5 resultados
+        const extraInfo = data.data.length > 5 ? "\n-# Solo se muestran los primeros 5 scans disponibles.": "";
+        
         // Crear botones de tipo enlace
         const buttons = scans.map(scan =>
           new ButtonBuilder()
@@ -196,7 +312,7 @@ async function showInfoManga(client, interaction, manga, url) {
         
         const actionRow = new ActionRowBuilder().addComponents(buttons);
         
-        await i.reply({ content: "**Seleccione una opción:**", components: [actionRow], allowedMentions: { repliedUser: false }});
+        await i.reply({ content: `**Seleccione una opción**:${extraInfo}`, components: [actionRow], allowedMentions: { repliedUser: false }});
       } catch (error) {
         await i.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al obtener los enlaces del capítulo.", allowedMentions: { repliedUser: false }});
         console.error(error);
@@ -210,43 +326,7 @@ async function showInfoManga(client, interaction, manga, url) {
   });
 }
 
-// Función para desactivar componentes
-async function disableComponents(interaction) {
-  try {
-    const message = await interaction.fetchReply();
-    
-    const disabledComponents = message.components.map(row => {
-      const newRow = ActionRowBuilder.from(row);
-      newRow.components = row.components.map(component => {
-        // Botones
-        if (component.type === 2) {
-          const newButton = ButtonBuilder.from(component);
-          // Mantener activos los botones de tipo enlace
-          if (newButton.data.style !== 5) {
-            newButton.setDisabled(true);
-          }
-          return newButton;
-        }
-        
-        // Select menus
-        else if (component.type === 3) {
-          return StringSelectMenuBuilder.from(component).setDisabled(true);
-        }
-        
-        // Manetener otros componentes por si acaso.
-        return component;
-      });
-      return newRow;
-    });
-    
-    await interaction.editReply({ components: disabledComponents });
-  } catch (error) {
-    // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
-    return;
-  }
-}
-
-// Función principal
+// Función run (comando principal)
 export async function run(client, interaction) {
   const subcommand = interaction.options.getSubcommand();
   
