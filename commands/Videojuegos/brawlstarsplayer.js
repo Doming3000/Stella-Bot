@@ -46,9 +46,7 @@ export async function run(client, interaction) {
     const brawlersOwned = player.brawlers.length;
     
     // Obtener la cantidad total de brawlers 
-    const brawlersData = await axios.get('https://api.brawlstars.com/v1/brawlers', {
-      headers: { Authorization: `Bearer ${BRAWL_API_TOKEN}` }
-    });
+    const brawlersData = await axios.get('https://api.brawlstars.com/v1/brawlers', { headers: { Authorization: `Bearer ${BRAWL_API_TOKEN}` }});
     
     const totalBrawlers = brawlersData.data.items.length;
     
@@ -85,14 +83,12 @@ export async function run(client, interaction) {
     
     // Evento del colector
     const filter = i => i.customId === 'battleLog' && i.user.id === interaction.user.id;
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60 * 1000, max: 1 });
+    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 2 * 60 * 1000, max: 1 });
     
     collector.on('collect', async i => {
       try {
         // Obtener el registro de batallas
-        const battleLogRes = await axios.get(`https://api.brawlstars.com/v1/players/${encodeURIComponent(tag)}/battlelog`, {
-          headers: { Authorization: `Bearer ${BRAWL_API_TOKEN}` }
-        });
+        const battleLogRes = await axios.get(`https://api.brawlstars.com/v1/players/${encodeURIComponent(tag)}/battlelog`, { headers: { Authorization: `Bearer ${BRAWL_API_TOKEN}` }});
         
         // Limitar a las últimas 5
         const battles = battleLogRes.data.items.slice(0, 5);
@@ -144,7 +140,7 @@ export async function run(client, interaction) {
         // Editar mensaje original con los botones desactivados
         await interaction.editReply({ components: disabledComponents });
       } catch (error) {
-        // Si da error, puede deberse a que el mensaje se eliminó.
+        // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
         return;
       }
     });
