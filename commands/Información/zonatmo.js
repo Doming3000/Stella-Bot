@@ -177,6 +177,12 @@ async function showInfoManga(client, interaction, manga, url) {
         return;
       }
       
+      // Comprobar si alguno de los datos es NULL
+      else if (!url || !manga.status || !manga.chapters) {
+        await i.reply({ content: "<:Advertencia:1302055825053057084> A este manga le falta información importante. No es posible procesar la suscripción.", flags: 64, allowedMentions: { repliedUser: false }});
+        return;
+      }
+      
       // Comprobar si el usuario ya hizo click en el botón
       else if (clickedUsers.has(i.user.id)) {
         await i.reply({ content: "<:Advertencia:1302055825053057084> Ya te has suscrito. Revisa tus mensajes directos.", flags: 64, allowedMentions: { repliedUser: false }});
@@ -195,7 +201,7 @@ async function showInfoManga(client, interaction, manga, url) {
         try {
           existing = await query("SELECT 1 FROM mangasuscription WHERE userID = ? AND manga = ? LIMIT 1", [i.user.id, url]);
         } catch (dbError) {
-          await i.reply({ content: "<:Advertencia:1302055825053057084> No se pudo verificar tu suscripción. Inténtalo de nuevo más tarde.", flags: 64, allowedMentions: { repliedUser: false }});
+          await i.reply({ content: "<:Advertencia:1302055825053057084> No se pudo registrar la suscripción. Inténtalo de nuevo más tarde.", flags: 64, allowedMentions: { repliedUser: false }});
           console.error("Database Error:", dbError);
           return;
         }
@@ -314,6 +320,10 @@ async function showInfoManga(client, interaction, manga, url) {
         
         await i.reply({ content: `**Seleccione una opción**:${extraInfo}`, components: [actionRow], allowedMentions: { repliedUser: false }});
       } catch (error) {
+        if (error.response.status === 404) {
+          await i.reply({ content: "<:Advertencia:1302055825053057084> No se encontraron enlaces para este manga. Se recomienda verificar en el navegador.", flags: 64, allowedMentions: { repliedUser: false }});
+          return;
+        }
         await i.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al obtener los enlaces del capítulo.", allowedMentions: { repliedUser: false }});
         console.error(error);
       }
@@ -426,6 +436,9 @@ export async function run(client, interaction) {
         try {
           // Evitar que el usuario vea "interacción fallida"
           await i.deferUpdate();
+          
+          // Desactivar el select menú para evitar errores
+          await disableComponents(interaction);
           
           const selectedUrl = i.values[0];
           
