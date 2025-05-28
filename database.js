@@ -26,11 +26,13 @@ export function query(sql, params = []) {
 }
 
 // Función para comprobar la conexión al iniciar
-pool.getConnection((error, connection) => {
-  if (error) {
-    console.error('❌  - No se pudo conectar a la base de datos:', error.message);
-  } else {
-    console.log('✅  - La base de datos está conectada.');
-    connection.release(); // Liberar la conexión después de probar
-  }
-});
+export function testConnection() {
+  pool.getConnection((error, connection) => {
+    if (error) {
+      console.error('❌  - No se pudo conectar a la base de datos:', error.message);
+    } else {
+      console.log('✅  - La base de datos está conectada.');
+      connection.release(); // Liberar la conexión después de probar
+    }
+  });
+}

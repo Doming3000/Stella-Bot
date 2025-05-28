@@ -1,4 +1,6 @@
 import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { startScraping } from "./services/mangaScraping.js";
+import { testConnection } from "./database.js";
 import { pathToFileURL } from "url";
 import { readdirSync } from "fs";
 import dotenv from 'dotenv';
@@ -22,8 +24,17 @@ client.commands = new Collection();
 
 // Iniciar sesión mediante el token
 const token = process.env.TOKEN;
-client.login(token).then(() => {
+client.login(token).then(async () => {
   console.log("✅  - La aplicación está en línea.");
+  
+  // Esperar 5 segundos para asegurar que el cliente esté completamente inicializado
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  
+  // Comprobar la conexión a la base de datos
+  testConnection();
+  
+  // Iniciar el servicio para comprobar si hay nuevos capitulos de manga
+  startScraping(client);
 });
 
 // Función para cargar comandos

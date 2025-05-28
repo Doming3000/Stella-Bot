@@ -11,10 +11,10 @@ export const data = new SlashCommandBuilder()
 
 // función auxiliar para enviar la confirmación de mensaje y eliminarla después de un tiempo
 async function sendConfirmation(interaction) {
-  const reply = await interaction.reply({ content: "Mensaje enviado!", flags: 64 });
+  const reply = await interaction.reply({ content: "<:Done:1326292171099345006> ¡Mensaje enviado!", flags: 64, allowedMentions: { repliedUser: false }});
   
-  // Eliminar la confirmación después de 1 segundo
-  setTimeout(() => reply.delete(), 1000);
+  // Eliminar la confirmación después de 1.5 segundos
+  setTimeout(() => reply.delete(), 1500);
 }
 
 export async function run(client, interaction) {

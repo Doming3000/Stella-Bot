@@ -11,11 +11,12 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.9",
-    "cron": "^3.3.2",
+    "cheerio": "^1.0.0",
     "discord.js": "^14.17.2",
     "dotenv": "^16.4.7",
     "fs": "^0.0.2",
     "mysql": "^2.18.1",
+    "node-cron": "^4.0.7",
     "qrcode": "^1.5.4"
   },
   "type": "module"
