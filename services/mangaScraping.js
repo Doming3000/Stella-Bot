@@ -24,47 +24,41 @@ async function checkNewChapter(client) {
     const result = await query('SELECT * FROM mangasuscription');
     
     for (const row of result) {
-      const { id, manga, userID, lastChapter } = row;
+      const { id, userID, mangaTitle, mangaUrl, lastChapter } = row;
       const user = await client.users.fetch(userID);
       
       try {
         // Simular un navegador real para evitar bloqueos
-        const { data: html } = await axios.get(manga, { headers: { 'User-Agent': 'Mozilla/5.0' }});
+        const { data: html } = await axios.get(mangaUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }});
         
-        // Analizar el HTML con cheerio, obtener el selector de capítulos, el status del manga, el título y la portada
+        // Analizar el HTML con cheerio, obtener el selector de capítulos, el status del manga y la miniatura
         const $ = cheerio.load(html);
         const newChapter = $('#chapters li.upload-link:first-of-type h4 a').first().text().trim();
-        const mangaStatus = $('div.col-span-6.lg\\:col-span-2').filter((i, el) => $(el).text().includes('Estado')).find('span.block.break-words.font-bold').text().trim();
-        const mangaTitle = $('h1.element-title.my-2').clone().children().remove().end().text().trim();
-        const mangaThumbnail = $('div.tab-content img').attr('src');
-        
-        if (!newChapter) {
-          console.warn("No se pudo encontrar el selector en la página.");
-          return;
-        }
+        const mangaStatus = $('h5.element-subtitle').filter((i, el) => $(el).text().trim() === 'Estado').next('span.book-status').text().trim();  
+        const mangaImage = $('img.book-thumbnail').attr('src')?.trim();  
         
         // Extraer solo el número del capítulo
         const match = newChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
-        const numero = match ? parseFloat(match[1]) : null;
+        const newChapterNumber = match ? parseFloat(match[1]) : null;
         
-        // Comprobar el estado del manga antes de actualizarlo
+        // Comprobar el estado del manga para decidir si debe ser eliminado
         if (mangaStatus === 'Finalizado') {
           // Remover el manga de la base de datos
-          await query('DELETE FROM mangasuscription WHERE manga = ?', [manga]);
+          await query('DELETE FROM mangasuscription WHERE mangaUrl = ?', [mangaUrl]);
           
           // Enviar un mensaje directo al usuario
-          await user.send({ content: `<:Info:1345848332760907807> Un [manga](${manga}) al que estabas suscrito ha sido marcado como finalizado.`, allowedMentions: { repliedUser: false }});  
+          await user.send({ content: `<:Info:1345848332760907807> El manga al que estabas suscrito: **${mangaTitle}**, ha sido marcado como finalizado.`, allowedMentions: { repliedUser: false }});  
           continue;
         }
         
         // Comprobar si hay un nuevo capítulo
-        if (numero && numero > parseFloat(lastChapter)) {
+        if (newChapterNumber && newChapterNumber > parseFloat(lastChapter)) {
           // Embed de capítulo nuevo
           const embed = new EmbedBuilder()
           .setColor(0x2957ba)
           .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
           .setTitle(mangaTitle)
-          .setThumbnail(mangaThumbnail)
+          .setImage(mangaImage)
           .addFields(
             { name: "📙 - Nuevo capítulo", value: `➜ ${newChapter}`, inline: true },
           )
@@ -74,7 +68,7 @@ async function checkNewChapter(client) {
           .addComponents(
             new ButtonBuilder()
             .setLabel("Ir a ZonaTMO")
-            .setURL(manga)
+            .setURL(mangaUrl)
             .setStyle("Link"),
           );
           
@@ -82,14 +76,14 @@ async function checkNewChapter(client) {
           await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
           
           // Actualizar el último capítulo en la base de datos
-          await query('UPDATE mangasuscription SET lastChapter = ? WHERE id = ?', [numero.toFixed(2), id]);
-          return;
+          await query('UPDATE mangasuscription SET lastChapter = ? WHERE id = ?', [newChapterNumber.toFixed(2), id]);
+          continue;
         }
       } catch (error) {
-        console.error(`Ha ocurrido un error al comprobar ${manga}:`, error.message);
+        console.error(`Ha ocurrido un error al comprobar ${mangaTitle}:`, error.message);
       }
     }
   } catch (error) {
-    console.error("Ha ocurrido un error al ejecutar el scraping:", error.message);
+    console.error("No se pudo conectar a la base de datos:", error.message);
   }
 }
