@@ -53,17 +53,20 @@ export async function run(client, interaction) {
     }
     
     try {
+      // Indicar que se está procesando la solicitud
+      await interaction.deferReply();
+      
       // Verificar si la suscripción ya existe
       const existing = await query('SELECT * FROM mangasuscription WHERE userID = ? AND mangaUrl = ?', [userID, url]);
       if (existing.length > 0) {
-        await interaction.reply({ content: "<:Advertencia:1302055825053057084> Ya estás suscrito a este manga.", flags: 64, allowedMentions: { repliedUser: false }});
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ya estás suscrito a este manga.", allowedMentions: { repliedUser: false }});
         return;
       }
       
-      // Limitar a 5 suscripciones por usuario
+      // Limitar a 5 suscripciones por usuario (ignorar al propietario)
       const subscriptions = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       if (subscriptions.length >= 5 && userID !== '811071747189112852') {
-        await interaction.reply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de `5` suscripciones activas.", flags: 64, allowedMentions: { repliedUser: false }});
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 5 suscripciones activas.", allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -80,9 +83,15 @@ export async function run(client, interaction) {
       const match = lastChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
       const lastChapterNumber = match ? parseFloat(match[1]) : null;
       
+      // Comprobar si alguno de los valores obtenidos es null
+      if (!mangaTitle || !mangaStatus || !lastChapter) {
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No se pudo obtener información de este manga. No es posible procesar la suscripción.", allowedMentions: { repliedUser: false }});
+        return;
+      }
+      
       // Comprobar el estado del manga antes de registrar la suscripción
-      if (mangaStatus === 'Finalizado') {
-        await interaction.reply({ content: "<:Advertencia:1302055825053057084> No puedes suscribirte a un manga ya finalizado.", flags: 64, allowedMentions: { repliedUser: false }});
+      else if (mangaStatus === 'Finalizado') {
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No puedes suscribirte a un manga ya finalizado.", allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -90,32 +99,37 @@ export async function run(client, interaction) {
       await query('INSERT INTO mangasuscription (userID, mangaTitle, mangaUrl, lastChapter) VALUES (?, ?, ?, ?)', [userID, mangaTitle, url, lastChapterNumber]);
       
       // Confirmar la interacción
-      await interaction.reply({ content: `<:Done:1326292171099345006> Te has suscrito a [${mangaTitle}](<${url}>).`, allowedMentions: { repliedUser: false }});
+      await interaction.editReply({ content: `<:Done:1326292171099345006> Te has suscrito correctamente a: [${mangaTitle}](<${url}>).`, allowedMentions: { repliedUser: false }});
     } catch (error) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al procesar la suscripción.", flags: 64, allowedMentions: { repliedUser: false }}, { content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", flags: 64, allowedMentions: { repliedUser: false }});
+      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al procesar la suscripción.", allowedMentions: { repliedUser: false }}, { content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", flags: 64, allowedMentions: { repliedUser: false }});
       console.log(error);
     }
   }
   
   else if (subcommand === 'unsubscribe') {
     try {
+      // Indicar que se está procesando la solicitud
+      await interaction.deferReply();
+      
       // Consultar las suscripciones activas del usuario
       const result = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       
       if (result.length === 0) {
-        await interaction.reply({ content: "<:Advertencia:1302055825053057084> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
         return;
       }
       
       // Select menú con las suscripciones      
       const options = result.map(row => ({
         label: row.mangaTitle.length > 100 ? row.mangaTitle.slice(0, 97) + '...' : row.mangaTitle,
-        description: row.mangaUrl,
+        // description: row.mangaUrl,
         value: String(row.id),
       }));
       
+      const customId = `unsubscribeSelector-${interaction.user.id}`;
+      
       const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId('unsubscribeSelector')
+      .setCustomId(customId)
       .setPlaceholder('Escoge una o varias opciones...')
       .setMinValues(1)
       .setMaxValues(options.length)
@@ -125,26 +139,43 @@ export async function run(client, interaction) {
       const row = new ActionRowBuilder().addComponents(selectMenu);
       
       // Envíar mensaje
-      await interaction.reply({ content: "<:Info:1345848332760907807> Selecciona cada manga del que deseas desuscribirte.", components: [row], allowedMentions: { repliedUser: false }});
+      await interaction.editReply({ content: "<:Info:1345848332760907807> Selecciona cada manga del que deseas desuscribirte.", components: [row], allowedMentions: { repliedUser: false }});
+      const replyMessage = await interaction.fetchReply();
       
       // Evento del colector
-      const filter = i => i.customId === 'unsubscribeSelector' && i.user.id === interaction.user.id;
-      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 2 * 60 * 1000, max: 1 });
+      const filter = i => {
+        if (i.customId !== customId) return false;
+        
+        // Asegurarse de que solo el autor de la interacción pueda responder
+        if (i.user.id !== interaction.user.id) {
+          i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64, allowedMentions: { repliedUser: false }}).catch(() => {});
+          return false;
+        }
+        
+        return true;
+      };
       
-      collector.on('collect', async i => {
+      const collector = replyMessage.createMessageComponentCollector({ filter, time: 2 * 60 * 1000 });
+      let wasHandled = false; // Variable para controlar si ya se manejó la interacción
+      
+      collector.on('collect', async i => {  
+        // Eliminar los mangas seleccionados de la base de datos
         const selectedIds = i.values;
         
-        // Eliminar los mangas seleccionados de la base de datos
         for (const id of selectedIds) {
           await query('DELETE FROM mangasuscription WHERE id = ?', [id]);
         }
         
         // Confirmar la interacción
         await i.update({ content: "<:Done:1326292171099345006> Te has desuscrito correctamente los mangas seleccionados.", components: [], allowedMentions: { repliedUser: false }});
+        wasHandled = true;
+        collector.stop();
       });
       
       // Finalizar el colector
       collector.on('end', async () => {
+        if (wasHandled) return;
+        
         try {
           // Obtener el mensaje original
           const message = await interaction.fetchReply();
@@ -159,25 +190,29 @@ export async function run(client, interaction) {
           });
           
           // Editar el mensaje original con el selector deshabilitado
-          await interaction.editReply({ components: disabledComponents });
+          await interaction.editReply({ content: "<:Advertencia:1302055825053057084> El selector ha caducado -⌛", components: disabledComponents });
+          
         } catch (error) {
           // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
           return;
         }
       });
     } catch (error) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", flags: 64, allowedMentions: { repliedUser: false }});
+      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
       console.log(error);
     }
   }
   
   else if (subcommand === 'subscriptions') {
     try {
+      // Indicar que se está procesando la solicitud
+      await interaction.deferReply();
+      
       // Consultar las suscripciones activas del usuario
       const result = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       
       if (result.length === 0) {
-        await interaction.reply({ content: "<:Done:1326292171099345006> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
+        await interaction.editReply({ content: "<:Done:1326292171099345006> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -191,9 +226,9 @@ export async function run(client, interaction) {
       .setFooter({ text: "Puedes tener un máximo de 5 suscripciones activas." });
       
       // Enviar mensaje
-      interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false }});
+      interaction.editReply({ embeds: [embed], allowedMentions: { repliedUser: false }});
     } catch (error) {
-      interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", flags: 64, allowedMentions: { repliedUser: false }});
+      interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
       console.log(error);
     }
   }
