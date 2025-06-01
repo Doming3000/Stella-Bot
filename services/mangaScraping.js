@@ -57,7 +57,7 @@ async function checkNewChapter(client) {
           const embed = new EmbedBuilder()
           .setColor(0x2957ba)
           .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
-          .setTitle(mangaTitle)
+          .setTitle(mangaTitle.length > 256 ? mangaTitle.slice(0, 253) + "..." : mangaTitle)
           .setImage(mangaImage)
           .addFields(
             { name: "📙 - Nuevo capítulo", value: `➜ ${newChapter}`, inline: true },

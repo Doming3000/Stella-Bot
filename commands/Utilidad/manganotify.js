@@ -99,7 +99,7 @@ export async function run(client, interaction) {
       await query('INSERT INTO mangasuscription (userID, mangaTitle, mangaUrl, lastChapter) VALUES (?, ?, ?, ?)', [userID, mangaTitle, url, lastChapterNumber]);
       
       // Confirmar la interacción
-      await interaction.editReply({ content: `<:Done:1326292171099345006> Te has suscrito correctamente a: [${mangaTitle}](<${url}>).`, allowedMentions: { repliedUser: false }});
+      await interaction.editReply({ content: `<:Done:1326292171099345006> Te has suscrito correctamente a: [${mangaTitle.length > 40 ? mangaTitle.slice(0, 37) + '...' : mangaTitle}](<${url}>)\n-# Recuerda mantener tus mensajes directos disponibles para recibir notificaciones.`, allowedMentions: { repliedUser: false }});
     } catch (error) {
       interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al procesar la suscripción.", allowedMentions: { repliedUser: false }}, { content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", flags: 64, allowedMentions: { repliedUser: false }});
       console.log(error);

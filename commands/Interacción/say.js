@@ -9,7 +9,7 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
-// función auxiliar para enviar la confirmación de mensaje y eliminarla después de un tiempo
+// Función para confirmar la interacción
 async function sendConfirmation(interaction) {
   const reply = await interaction.reply({ content: "<:Done:1326292171099345006> ¡Mensaje enviado!", flags: 64, allowedMentions: { repliedUser: false }});
   

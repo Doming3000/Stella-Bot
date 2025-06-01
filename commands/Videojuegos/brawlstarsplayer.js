@@ -82,8 +82,20 @@ export async function run(client, interaction) {
     await interaction.editReply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
     
     // Evento del colector
-    const filter = i => i.customId === 'battleLog' && i.user.id === interaction.user.id;
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 2 * 60 * 1000, max: 1 });
+    const filter = i => {
+      if (i.customId !== customId) return false;
+      
+      // Asegurarse de que solo el autor de la interacción pueda responder
+      if (i.user.id !== interaction.user.id) {
+        i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64, allowedMentions: { repliedUser: false }}).catch(() => {});
+        return false;
+      }
+      
+      return true;
+    };
+    
+    const collector = replyMessage.createMessageComponentCollector({ filter, time: 2 * 60 * 1000 });
+    let wasHandled = false; // Variable para controlar si ya se manejó la interacción
     
     collector.on('collect', async i => {
       try {
@@ -116,14 +128,19 @@ export async function run(client, interaction) {
         
         // Enviar respuesta
         await i.reply({ embeds: [battlesEmbed] });
+        wasHandled = true;
+        collector.stop();
       } catch (error) {
-        console.error(error);
         await i.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al obtener el registro.", allowedMentions: { repliedUser: false }});
+        console.error(error);
+        collector.stop();
       }
     });
     
     // Finalizar colector
     collector.on('end', async () => {
+      if (wasHandled) return;
+      
       try {
         // Obtener mensaje original
         const message = await interaction.fetchReply();
@@ -153,5 +170,3 @@ export async function run(client, interaction) {
     }
   }
 }
-
-// Mejorar el registro de batalla.
