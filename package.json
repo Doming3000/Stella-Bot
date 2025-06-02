@@ -17,6 +17,7 @@
     "fs": "^0.0.2",
     "mysql": "^2.18.1",
     "node-cron": "^4.0.7",
+    "p-limit": "^6.2.0",
     "qrcode": "^1.5.4"
   },
   "type": "module"

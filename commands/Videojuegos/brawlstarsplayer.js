@@ -9,7 +9,7 @@ const BRAWL_API_TOKEN = process.env.BRAWL_API_TOKEN;
 
 export const data = new SlashCommandBuilder()
 .setName('brawlstars-player')
-.setDescription('Muestra información de un jugador de Brawl Stars mediante su tag.')
+.setDescription('EN DESARROLLO - Muestra información de un jugador de Brawl Stars mediante su tag.')
 .addStringOption(option =>
   option.setName('tag')
   .setDescription('Tag del jugador.')
@@ -68,11 +68,13 @@ export async function run(client, interaction) {
       { name: ':shield: Club', value: `${player.club?.name || '*Sin club*'}`, inline: false }
     )
     
+    const customId = `battlelog-${interaction.user.id}`;
+    
     // Botones
     const actionRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-      .setCustomId('battleLog')
+      .setCustomId(customId)
       .setEmoji('🗒️')
       .setLabel('Registro de batalla')
       .setStyle('Secondary'),
@@ -80,6 +82,7 @@ export async function run(client, interaction) {
     
     // Enviar mensaje
     await interaction.editReply({ embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});
+    const replyMessage = await interaction.fetchReply();
     
     // Evento del colector
     const filter = i => {
@@ -95,7 +98,6 @@ export async function run(client, interaction) {
     };
     
     const collector = replyMessage.createMessageComponentCollector({ filter, time: 2 * 60 * 1000 });
-    let wasHandled = false; // Variable para controlar si ya se manejó la interacción
     
     collector.on('collect', async i => {
       try {
@@ -108,11 +110,11 @@ export async function run(client, interaction) {
         let logDescription = battles.map(b => {
           const mode = b.battle.mode;
           const result = b.battle.result || 'desconocido';
-          const trophyChange = b.battle.trophyChange ? `(+${b.battle.trophyChange})` : '';
+          const trophyChange = b.battle.trophyChange ? `(${b.battle.trophyChange})` : '';
           const map = b.event.map || 'Mapa desconocido';
           const date = new Date(b.battleTime).toLocaleString('es-ES');
           
-          return `**${mode.toUpperCase()}** - ${result} ${trophyChange} \n*Mapa:* ${map} \n🕒 ${date}`;
+          return `**${mode.toUpperCase()}** - ${result} ${trophyChange} \n🗺️ Mapa: ${map} \n🕒 ${date}`;
         }).join('\n\n');
         
         // Embed del registro
@@ -128,7 +130,6 @@ export async function run(client, interaction) {
         
         // Enviar respuesta
         await i.reply({ embeds: [battlesEmbed] });
-        wasHandled = true;
         collector.stop();
       } catch (error) {
         await i.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al obtener el registro.", allowedMentions: { repliedUser: false }});
@@ -139,14 +140,9 @@ export async function run(client, interaction) {
     
     // Finalizar colector
     collector.on('end', async () => {
-      if (wasHandled) return;
-      
-      try {
-        // Obtener mensaje original
-        const message = await interaction.fetchReply();
-        
+      try {        
         // Desactivar todos los botones
-        const disabledComponents = message.components.map(row => {
+        const disabledComponents = replyMessage.components.map(row => {
           const newRow = ActionRowBuilder.from(row);
           newRow.components = row.components.map(component => 
             ButtonBuilder.from(component).setDisabled(true)

@@ -63,10 +63,10 @@ export async function run(client, interaction) {
         return;
       }
       
-      // Limitar a 5 suscripciones por usuario (ignorar al propietario)
+      // Limitar a 3 suscripciones por usuario (ignorar para el propietario)
       const subscriptions = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
-      if (subscriptions.length >= 5 && userID !== '811071747189112852') {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 5 suscripciones activas.", allowedMentions: { repliedUser: false }});
+      if (subscriptions.length >= 3 && userID !== '811071747189112852') {
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 3 suscripciones activas.", allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -176,12 +176,9 @@ export async function run(client, interaction) {
       collector.on('end', async () => {
         if (wasHandled) return;
         
-        try {
-          // Obtener el mensaje original
-          const message = await interaction.fetchReply();
-          
+        try {          
           // Desactivar el select menu
-          const disabledComponents = message.components.map(row => {
+          const disabledComponents = replyMessage.components.map(row => {
             return new ActionRowBuilder().addComponents(
               row.components.map(component => 
                 StringSelectMenuBuilder.from(component).setDisabled(true)
@@ -223,7 +220,7 @@ export async function run(client, interaction) {
       .setTitle(`Suscripciones activas de: ${interaction.user.displayName}`)
       .setThumbnail(interaction.user.displayAvatarURL())
       .setDescription(result.map((manga) => `- [${manga.mangaTitle}](${manga.mangaUrl})`).join('\n'))
-      .setFooter({ text: "Puedes tener un máximo de 5 suscripciones activas." });
+      .setFooter({ text: "Puedes tener un máximo de 3 suscripciones activas." });
       
       // Enviar mensaje
       interaction.editReply({ embeds: [embed], allowedMentions: { repliedUser: false }});
