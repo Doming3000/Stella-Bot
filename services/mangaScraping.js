@@ -15,7 +15,7 @@ const limit = pLimit(3);
 // Función para iniciar el scraping programado
 export function startScraping(client) {
   // Programa: Minuto 1 de cada hora (HH:01)
-  cron.schedule('* * * * *', () => {
+  cron.schedule('1 * * * *', () => {
     const horaActual = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     console.log(`⏰  - Ejecutando web scraping programado de las ${horaActual}.`);
     htmlCache(client);
