@@ -10,7 +10,7 @@ import axios from "axios";
 dotenv.config();
 
 // Límite de peticiones simultaneas para ahorrar recursos
-const limit = pLimit(3);
+const limit = pLimit(1);
 
 // Función para iniciar el scraping programado
 export function startScraping(client) {
@@ -78,7 +78,7 @@ async function checkNewChapter(row, client, htmlCache) {
     }
     
     // Comprobar si hay un nuevo capítulo
-    if (newChapterNumber && newChapterNumber > parseFloat(lastChapter)) {
+    else if (newChapterNumber && newChapterNumber > parseFloat(lastChapter)) {
       // Embed de capítulo nuevo
       const embed = new EmbedBuilder()
       .setColor(0x2957ba)
@@ -103,6 +103,8 @@ async function checkNewChapter(row, client, htmlCache) {
       
       // Actualizar el último capítulo en la base de datos
       await query('UPDATE mangasuscription SET lastChapter = ? WHERE id = ?', [newChapterNumber.toFixed(2), id]);
+      
+      console.log(`📃  - Capítulo para ${mangaTitle} encontrado: ${newChapter}.`);
     }
   } catch (error) {
     console.error(`Ha ocurrido un error al comprobar ${mangaTitle}: `, error.message);

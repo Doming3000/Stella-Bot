@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Collection, Partials } from "discord.js";
 import { startScraping } from "./services/mangaScraping.js";
 import { testConnection } from "./database.js";
 import { pathToFileURL } from "url";
@@ -18,7 +18,8 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
-  ]
+  ],
+  partials: [Partials.Channel]
 });
 
 client.commands = new Collection();
@@ -34,7 +35,7 @@ client.login(token).then(async () => {
   // Comprobar la conexión a la base de datos
   testConnection();
   
-  // Iniciar el servicio para comprobar si hay nuevos capitulos de manga
+  // Iniciar el servicio de web scraping para ZonaTMO
   startScraping(client);
 });
 
