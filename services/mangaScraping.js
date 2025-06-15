@@ -2,15 +2,11 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
 import { query } from "../database.js";
 import * as cheerio from "cheerio";
 import cron from "node-cron";
-import pLimit from "p-limit";
 import dotenv from 'dotenv';
 import axios from "axios";
 
 // Cargar variables de entorno
 dotenv.config();
-
-// Límite de peticiones simultaneas para ahorrar recursos
-const limit = pLimit(1);
 
 // Función para iniciar el scraping programado
 export function startScraping(client) {
@@ -18,27 +14,36 @@ export function startScraping(client) {
   cron.schedule('1 * * * *', () => {
     const horaActual = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     console.log(`⏰  - Ejecutando web scraping programado de las ${horaActual}.`);
-    htmlCache(client);
+    webScraping(client);
   });
 }
 
-async function htmlCache(client) {
+// Función para realizar el web scraping
+async function webScraping(client) {
   try {
     // Consultar la base de datos
     const result = await query('SELECT * FROM mangasuscription');
     
-    const htmlCache = new Map(); // Cachear HTMLs por URL
+    // Caché para evitar realizar peticiones duplicadas
+    const UrlCache = new Map();
     
-    const tasks = result.map(row => limit(() => checkNewChapter(row, client, htmlCache)));
-    await Promise.all(tasks);
+    // Comprobar si hay un nuevo capítulo
+    // console.log(`🔄 Procesando ${result.length} mangas...`);  // Depuración
     
+    let i = 1;  // Depuración
+    for (const row of result) {
+      // console.log(`➡️ (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
+      await checkNewChapter(row, client, UrlCache);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Esperar medio segundo entre consultas
+      // i++;  // Depuración
+    }
   } catch (error) {
     console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
   }
 }
 
 // Función para comprobar si hay un nuevo capítulo
-async function checkNewChapter(row, client, htmlCache) {
+async function checkNewChapter(row, client, UrlCache) {
   const { id, userID, mangaTitle, mangaUrl, lastChapter } = row;
   
   try {
@@ -46,19 +51,19 @@ async function checkNewChapter(row, client, htmlCache) {
     const user = client.users.cache.get(userID) ?? await client.users.fetch(userID);
     
     // Usar caché para evitar realizar peticiones duplicadas
-    let html;
+    let $;
     
-    if (htmlCache.has(mangaUrl)) {
-      html = htmlCache.get(mangaUrl);
+    if (UrlCache.has(mangaUrl)) {
+      const html = UrlCache.get(mangaUrl);
+      $ = cheerio.load(html);
     } else {
-      // Simular un navegador real para evitar bloqueos
+      // Simular un navegador real
       const { data } = await axios.get(mangaUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }});
-      html = data;
-      htmlCache.set(mangaUrl, data);
+      UrlCache.set(mangaUrl, data);
+      $ = cheerio.load(data);
     }
     
     // Analizar el HTML con cheerio, obtener el selector de capítulos, el status del manga y la miniatura
-    const $ = cheerio.load(html);
     const newChapter = $('#chapters li.upload-link:first-of-type h4 a').first().text().trim();
     const mangaStatus = $('h5.element-subtitle').filter((i, el) => $(el).text().trim() === 'Estado').next('span.book-status').text().trim();  
     const mangaImage = $('img.book-thumbnail').attr('src')?.trim();  
@@ -73,8 +78,13 @@ async function checkNewChapter(row, client, htmlCache) {
       await query('DELETE FROM mangasuscription WHERE mangaUrl = ?', [mangaUrl]);
       
       // Enviar un mensaje directo al usuario
-      await user.send({ content: `<:Info:1345848332760907807> El manga al que estabas suscrito: **${mangaTitle}**, ha sido marcado como finalizado.`, allowedMentions: { repliedUser: false }});
-      return;
+      try {
+        await user.send({ content: `<:Info:1345848332760907807> El manga al que estabas suscrito: **${mangaTitle}**, ha sido marcado como finalizado.`, allowedMentions: { repliedUser: false }});
+        return;
+      } catch (error) {
+        console.log(`❌  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
+        return;
+      }
     }
     
     // Comprobar si hay un nuevo capítulo
@@ -98,13 +108,16 @@ async function checkNewChapter(row, client, htmlCache) {
         .setStyle("Link"),
       );
       
-      // Enviar un mensaje directo al usuario
-      await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
-      
       // Actualizar el último capítulo en la base de datos
       await query('UPDATE mangasuscription SET lastChapter = ? WHERE id = ?', [newChapterNumber.toFixed(2), id]);
       
-      console.log(`📃  - Capítulo para ${mangaTitle} encontrado: ${newChapter}.`);
+      // Enviar un mensaje directo al usuario
+      try {
+        await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
+      } catch (error) {
+        console.log(`❌  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
+        return;
+      }
     }
   } catch (error) {
     console.error(`Ha ocurrido un error al comprobar ${mangaTitle}: `, error.message);
