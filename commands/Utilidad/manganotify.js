@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from "discord.js";
 import { query } from "../../database.js";
-import * as cheerio from "cheerio";
 import axios from "axios";
 
 export const data = new SlashCommandBuilder()
@@ -63,25 +62,35 @@ export async function run(client, interaction) {
         return;
       }
       
-      // Limitar a 3 suscripciones por usuario (ignorar para el propietario)
+      // Limitar a 3 suscripciones por usuario (Ignorar al propietario)
       const subscriptions = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       if (subscriptions.length >= 3 && userID !== '811071747189112852') {
         await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 3 suscripciones activas.", allowedMentions: { repliedUser: false }});
         return;
       }
       
-      // Simular un navegador real para evitar bloqueos
+      // Simular un navegador real y obtener información del manga
       const { data: html } = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }});
       
-      // Analizar el HTML con cheerio, obtener el título y el último capítulo
-      const $ = cheerio.load(html);
-      const mangaTitle = $('h1.element-title.my-2').clone().children().remove().end().text().trim();
-      const mangaStatus = $('h5.element-subtitle').filter((i, el) => $(el).text().trim() === 'Estado').next('span.book-status').text().trim();
-      const lastChapter = $('#chapters li.upload-link:first-of-type h4 a').first().text().trim();
+      // Título del manga
+      const titleMatch = html.match(/<h1\s+class="element-title my-2"[^>]*>([\s\S]*?)<\/h1>/i);
+      const mangaTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').replace(/\([\s\S]*?\)/g, '').replace(/\s+/g, ' ').trim() : null;
       
-      // Extraer solo el número del capítulo
-      const match = lastChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
-      const lastChapterNumber = match ? parseFloat(match[1]) : null;
+      // Estado del manga
+      const statusMatch = html.match(/<h5\s+class="element-subtitle">\s*Estado\s*<\/h5>\s*<span\s+class="book-status[^"]*">\s*([^<]+?)\s*<\/span>/i);
+      const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
+      
+      // Último capítulo disponible
+      let lastChapter = null;
+      let lastChapterNumber = null;
+      
+      const chapterMatch = html.match(/<a[^>]*>[\s\S]*?Cap[ií]tulo\s*([\d.]+)[\s\S]*?<\/a>/i);
+      
+      // Extraer el número del capítulo
+      if (chapterMatch) {
+        lastChapter = `Capítulo ${chapterMatch[1]}`.trim();
+        lastChapterNumber = parseFloat(chapterMatch[1]);
+      }
       
       // Comprobar si alguno de los valores obtenidos es null
       if (!mangaTitle || !mangaStatus || !lastChapter) {
@@ -99,7 +108,7 @@ export async function run(client, interaction) {
       await query('INSERT INTO mangasuscription (userID, mangaTitle, mangaUrl, lastChapter) VALUES (?, ?, ?, ?)', [userID, mangaTitle, url, lastChapterNumber]);
       
       // Confirmar la interacción
-      await interaction.editReply({ content: `<:Done:1326292171099345006> Te has suscrito correctamente a: [${mangaTitle.length > 40 ? mangaTitle.slice(0, 37) + '...' : mangaTitle}](<${url}>)\n-# Recuerda mantener tus mensajes directos disponibles para recibir notificaciones.`, allowedMentions: { repliedUser: false }});
+      await interaction.editReply({ content: `<:Done:1326292171099345006> Te has suscrito a: [${mangaTitle.length > 50 ? mangaTitle.slice(0, 47) + '...' : mangaTitle}](<${url}>)\n-# Mantén tus mensajes directos habilitados para recibir notificaciones.`, allowedMentions: { repliedUser: false }});
     } catch (error) {
       interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al procesar la suscripción.", allowedMentions: { repliedUser: false }}, { content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", flags: 64, allowedMentions: { repliedUser: false }});
       console.log(error);
@@ -167,7 +176,7 @@ export async function run(client, interaction) {
         }
         
         // Confirmar la interacción
-        await i.update({ content: "<:Done:1326292171099345006> Te has desuscrito correctamente los mangas seleccionados.", components: [], allowedMentions: { repliedUser: false }});
+        await i.update({ content: "<:Done:1326292171099345006> Te has desuscrito de los mangas seleccionados.", components: [], allowedMentions: { repliedUser: false }});
         wasHandled = true;
         collector.stop();
       });

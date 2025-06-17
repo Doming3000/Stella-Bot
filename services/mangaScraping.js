@@ -1,6 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
 import { query } from "../database.js";
-import * as cheerio from "cheerio";
 import cron from "node-cron";
 import dotenv from 'dotenv';
 import axios from "axios";
@@ -28,14 +27,14 @@ async function webScraping(client) {
     const UrlCache = new Map();
     
     // Comprobar si hay un nuevo capítulo
-    // console.log(`🔄 Procesando ${result.length} mangas...`);  // Depuración
+    console.log(`🔄 Procesando ${result.length} mangas...`);  // Depuración
     
     let i = 1;  // Depuración
     for (const row of result) {
-      // console.log(`➡️ (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
+      console.log(`➡️ (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
       await checkNewChapter(row, client, UrlCache);
       await new Promise(resolve => setTimeout(resolve, 500)); // Esperar medio segundo entre consultas
-      // i++;  // Depuración
+      i++;  // Depuración
     }
   } catch (error) {
     console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
@@ -51,26 +50,34 @@ async function checkNewChapter(row, client, UrlCache) {
     const user = client.users.cache.get(userID) ?? await client.users.fetch(userID);
     
     // Usar caché para evitar realizar peticiones duplicadas
-    let $;
+    let html;
     
     if (UrlCache.has(mangaUrl)) {
-      const html = UrlCache.get(mangaUrl);
-      $ = cheerio.load(html);
+      html = UrlCache.get(mangaUrl);
     } else {
       // Simular un navegador real
       const { data } = await axios.get(mangaUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }});
       UrlCache.set(mangaUrl, data);
-      $ = cheerio.load(data);
+      html = data;
     }
     
-    // Analizar el HTML con cheerio, obtener el selector de capítulos, el status del manga y la miniatura
-    const newChapter = $('#chapters li.upload-link:first-of-type h4 a').first().text().trim();
-    const mangaStatus = $('h5.element-subtitle').filter((i, el) => $(el).text().trim() === 'Estado').next('span.book-status').text().trim();  
-    const mangaImage = $('img.book-thumbnail').attr('src')?.trim();  
+    // Miniatura del manga
+    const imageMatch = html.match(/<img[^>]*class="book-thumbnail"[^>]*src="([^"]+)"[^>]*>/i);
+    const mangaImage = imageMatch ? imageMatch[1].trim() : null;
     
-    // Extraer solo el número del capítulo
-    const match = newChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
-    const newChapterNumber = match ? parseFloat(match[1]) : null;
+    // Estado del manga
+    const statusMatch = html.match(/<h5\s+class="element-subtitle">\s*Estado\s*<\/h5>\s*<span\s+class="book-status[^"]*">\s*([^<]+?)\s*<\/span>/i);
+    const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
+    
+    // Último capítulo disponible
+    let newChapter = null;
+    let newChapterNumber = null;
+    
+    const chapterMatch = html.match(/<a[^>]*>[\s\S]*?Cap[ií]tulo\s*([\d.]+)[\s\S]*?<\/a>/i);
+    if (chapterMatch) {
+      newChapter = `Capítulo ${chapterMatch[1]}`.trim();
+      newChapterNumber = parseFloat(chapterMatch[1]);
+    }
     
     // Comprobar el estado del manga para decidir si debe ser eliminado
     if (mangaStatus === 'Finalizado') {
