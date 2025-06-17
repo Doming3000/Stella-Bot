@@ -12,12 +12,10 @@ export const data = new SlashCommandBuilder()
 export async function run(client, interaction) {
   const contenido = interaction.options.getString('contenido');
   
-  try {
-    // Gifs
-    const gifs = ["https://tenor.com/9E01.gif", "https://tenor.com/bisuu.gif", "https://tenor.com/birIr.gif"];
-    
+  try {    
     // Enviar mensaje directo al usuario
     if(!contenido) {
+      const gifs = ["https://tenor.com/9E01.gif", "https://tenor.com/bisuu.gif", "https://tenor.com/birIr.gif", "https://tenor.com/bFxGn.gif", "https://tenor.com/bYbMp.gif"];
       await interaction.user.send({ content: gifs[Math.floor(Math.random() * gifs.length)], allowedMentions: { repliedUser: false }});
     } else {
       await interaction.user.send({ content: contenido, allowedMentions: { repliedUser: false }});
