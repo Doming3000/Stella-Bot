@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js"
+import pidusage from "pidusage";
 import os from "os"
 
 export const data = new SlashCommandBuilder()
