@@ -9,7 +9,7 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
-// Función para confirmar la interacción
+// Función auxiliar para confirmar la interacción
 async function sendConfirmation(interaction) {
   const reply = await interaction.reply({ content: "<:Done:1326292171099345006> ¡Mensaje enviado!", flags: 64, allowedMentions: { repliedUser: false }});
   
