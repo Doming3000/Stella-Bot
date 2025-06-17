@@ -3,14 +3,12 @@ import os from "os"
 
 export const data = new SlashCommandBuilder()
 .setName('botping')
-.setDescription('Muestra la latencia y estado del bot.')
+.setDescription('Muestra la latencia del bot.')
 
-export function run(client, interaction) {
+export async function run(client, interaction) {
   // Obtener información del entorno
-  const memoryUsage = process.memoryUsage();
   const totalMem = os.totalmem();
-  const usedMem = memoryUsage.rss;
-  const cpuLoad = os.loadavg()[0]; // Promedio de carga del CPU (último minuto)
+  const stats = await pidusage(process.pid);
   
   const formatBytes = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)}MB`;
   
@@ -18,7 +16,7 @@ export function run(client, interaction) {
   .setColor(0x779ecb)
   .setAuthor({ name: `${client.user.username} - ${interaction.commandName}`, iconURL: client.user.displayAvatarURL()})
   .setTitle('🏓 ¡Pong!')
-  .setDescription(`- 📡 Ping:\`${client.ws.ping}ms\`.\n- 🧠 Uso de memoria: \`${formatBytes(usedMem)} / ${formatBytes(totalMem)}\`\n- 🤖 Carga del CPU (último minuto): \`${cpuLoad.toFixed(2)}\``)
+  .setDescription(`- 📡 Ping: \`${client.ws.ping}ms\`.\n- 🧠 Uso de memoria: \`${formatBytes(usedMem)} / ${formatBytes(totalMem)}\`\n- 🤖 Uso del CPU: \`${stats.cpu.toFixed(2)}%\``)
   
   interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } })
 }
