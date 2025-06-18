@@ -27,11 +27,11 @@ async function webScraping(client) {
     const UrlCache = new Map();
     
     // Comprobar si hay un nuevo capítulo
-    console.log(`🔄 Procesando ${result.length} mangas...`);  // Depuración
+    console.log(`🔄  - Procesando ${result.length} mangas...`);  // Depuración
     
     let i = 1;  // Depuración
     for (const row of result) {
-      console.log(`➡️ (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
+      console.log(`➡️  - (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
       await checkNewChapter(row, client, UrlCache);
       await new Promise(resolve => setTimeout(resolve, 500)); // Esperar medio segundo entre consultas
       i++;  // Depuración
@@ -62,7 +62,7 @@ async function checkNewChapter(row, client, UrlCache) {
     }
     
     // Miniatura del manga
-    const imageMatch = html.match(/<img[^>]*class="book-thumbnail"[^>]*src="([^"]+)"[^>]*>/i);
+    const imageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
     const mangaImage = imageMatch ? imageMatch[1].trim() : null;
     
     // Estado del manga
@@ -70,13 +70,15 @@ async function checkNewChapter(row, client, UrlCache) {
     const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
     
     // Último capítulo disponible
+    const rawChapterBlock = html.match(/<a[^>]*>([\s\S]*?Cap[ií]tulo[\s\S]*?)<\/a>/i);
     let newChapter = null;
     let newChapterNumber = null;
     
-    const chapterMatch = html.match(/<a[^>]*>[\s\S]*?Cap[ií]tulo\s*([\d.]+)[\s\S]*?<\/a>/i);
-    if (chapterMatch) {
-      newChapter = `Capítulo ${chapterMatch[1]}`.trim();
-      newChapterNumber = parseFloat(chapterMatch[1]);
+    if (rawChapterBlock) {
+      const cleanText = rawChapterBlock[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      const numberMatch = cleanText.match(/Cap[ií]tulo\s+([\d.]+)/i);
+      newChapter = cleanText;
+      newChapterNumber = numberMatch ? parseFloat(numberMatch[1]) : null;
     }
     
     // Comprobar el estado del manga para decidir si debe ser eliminado
