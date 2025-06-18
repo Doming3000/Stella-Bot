@@ -70,15 +70,13 @@ async function checkNewChapter(row, client, UrlCache) {
     const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
     
     // Último capítulo disponible
-    const rawChapterBlock = html.match(/<a[^>]*>([\s\S]*?Cap[ií]tulo[\s\S]*?)<\/a>/i);
     let newChapter = null;
     let newChapterNumber = null;
-    
-    if (rawChapterBlock) {
-      const cleanText = rawChapterBlock[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-      const numberMatch = cleanText.match(/Cap[ií]tulo\s+([\d.]+)/i);
-      newChapter = cleanText;
-      newChapterNumber = numberMatch ? parseFloat(numberMatch[1]) : null;
+    const chapterMatch = html.match(/Cap[ií]tulo\s+[\d.]+(?:\s+[^\n<]+)*/i);
+    if (chapterMatch) {
+      newChapter = chapterMatch[0].trim();
+      const numMatch = newChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
+      newChapterNumber = numMatch ? parseFloat(numMatch[1]) : null;
     }
     
     // Comprobar el estado del manga para decidir si debe ser eliminado
