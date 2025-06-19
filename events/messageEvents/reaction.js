@@ -20,9 +20,14 @@ export async function handleMessage(message, client) {
     case content.includes("rawr"):
     await message.react('<a:RawrAttack:1329113910376271943>');
     break;
-
+    
     // Chicken jockey
     case content.includes("chicken jockey"):
+    await message.react("🔥");
+    break;
+    
+    // Tracking device
+    case content.includes("tracking device"):
     await message.react("🔥");
     break;
     
