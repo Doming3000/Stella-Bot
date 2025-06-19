@@ -69,7 +69,7 @@ export async function run(client, interaction) {
         return;
       }
       
-      // Simular un navegador real y obtener información del manga
+      // Simular un navegador real y obtener la información del manga
       const { data: html } = await axios.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }});
       
       // Título del manga
@@ -81,10 +81,9 @@ export async function run(client, interaction) {
       const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
       
       // Último capítulo disponible
+      const chapterMatch = html.match(/<a[^>]*>[\s\S]*?Cap[ií]tulo\s*([\d.]+)[\s\S]*?<\/a>/i);
       let lastChapter = null;
       let lastChapterNumber = null;
-      
-      const chapterMatch = html.match(/<a[^>]*>[\s\S]*?Cap[ií]tulo\s*([\d.]+)[\s\S]*?<\/a>/i);
       
       // Extraer el número del capítulo
       if (chapterMatch) {

@@ -20,6 +20,8 @@ export function startScraping(client) {
 // Función para realizar el web scraping
 async function webScraping(client) {
   try {
+    const startTime = Date.now();
+    
     // Consultar la base de datos
     const result = await query('SELECT * FROM mangasuscription');
     
@@ -27,15 +29,17 @@ async function webScraping(client) {
     const UrlCache = new Map();
     
     // Comprobar si hay un nuevo capítulo
-    console.log(`🔄  - Procesando ${result.length} mangas...`);  // Depuración
+    console.log(`🔄  - Procesando ${result.length} mangas...`);
     
-    let i = 1;  // Depuración
+    // let i = 1;  // Depuración
     for (const row of result) {
-      console.log(`➡️  - (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
+      // console.log(`➡️  - (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
       await checkNewChapter(row, client, UrlCache);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Esperar medio segundo entre consultas
-      i++;  // Depuración
+      await new Promise(resolve => setTimeout(resolve, 500)); // Esperar medio segundo entre las consultas
+      // i++;  // Depuración
     }
+    
+    console.log(`↪️  - Web scraping completado. Se revisaron ${result.length} mangas.\n🕐  - La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
   } catch (error) {
     console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
   }
@@ -70,9 +74,11 @@ async function checkNewChapter(row, client, UrlCache) {
     const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
     
     // Último capítulo disponible
+    const chapterMatch = html.match(/Cap[ií]tulo\s+[\d.]+(?:\s+[^\n<]+)*/i);
     let newChapter = null;
     let newChapterNumber = null;
-    const chapterMatch = html.match(/Cap[ií]tulo\s+[\d.]+(?:\s+[^\n<]+)*/i);
+    
+    // Extraer el nombre del capítulo y el número
     if (chapterMatch) {
       newChapter = chapterMatch[0].trim();
       const numMatch = newChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
@@ -89,7 +95,7 @@ async function checkNewChapter(row, client, UrlCache) {
         await user.send({ content: `<:Info:1345848332760907807> El manga al que estabas suscrito: **${mangaTitle}**, ha sido marcado como finalizado.`, allowedMentions: { repliedUser: false }});
         return;
       } catch (error) {
-        console.log(`❌  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
+        console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
         return;
       }
     }
@@ -122,7 +128,7 @@ async function checkNewChapter(row, client, UrlCache) {
       try {
         await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
       } catch (error) {
-        console.log(`❌  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
+        console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
         return;
       }
     }
