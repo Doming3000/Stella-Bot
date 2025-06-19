@@ -17,7 +17,7 @@ export async function run(client, interaction) {
   .setColor(0x779ecb)
   .setAuthor({ name: `${client.user.username} - ${interaction.commandName}`, iconURL: client.user.displayAvatarURL()})
   .setTitle('🏓 ¡Pong!')
-  .setDescription(`- 📡 Ping: \`${client.ws.ping}ms\`.\n- 🧠 Uso de memoria: \`${formatBytes(stats.memory)} / ${formatBytes(totalMem)}\`\n- 🤖 Uso del CPU: \`${stats.cpu.toFixed(2)}%\``)
+  .setDescription(`- 📡 - Ping: \`${client.ws.ping}ms\`\n- 🧠 - Uso de memoria: \`${formatBytes(stats.memory)} / ${formatBytes(totalMem)}\`\n- 🤖 - Uso del CPU: \`${stats.cpu.toFixed(2)}%\``)
   
   interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } })
 }
