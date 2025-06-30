@@ -62,10 +62,10 @@ export async function run(client, interaction) {
         return;
       }
       
-      // Limitar a 3 suscripciones por usuario (Ignorar al propietario)
+      // Limitar a 5 suscripciones por usuario (Ignorar al propietario)
       const subscriptions = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
-      if (subscriptions.length >= 3 && userID !== '811071747189112852') {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 3 suscripciones activas.", allowedMentions: { repliedUser: false }});
+      if (subscriptions.length >= 5 && userID !== '811071747189112852') {
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 5 suscripciones activas.", allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -75,6 +75,10 @@ export async function run(client, interaction) {
       // Título del manga
       const titleMatch = html.match(/<h1\s+class="element-title my-2"[^>]*>([\s\S]*?)<\/h1>/i);
       const mangaTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').replace(/\([\s\S]*?\)/g, '').replace(/\s+/g, ' ').trim() : null;
+      
+      // Tipo de manga
+      const typeMatch = html.match(/<h1[^>]*class=["'][^"']*\bbook-type\b[^"']*["'][^>]*>\s*([^<]+)\s*<\/h1>/i);
+      const mangaType = typeMatch ? typeMatch[1].trim().toLowerCase() : null;
       
       // Estado del manga
       const statusMatch = html.match(/<h5\s+class="element-subtitle">\s*Estado\s*<\/h5>\s*<span\s+class="book-status[^"]*">\s*([^<]+?)\s*<\/span>/i);
@@ -91,9 +95,9 @@ export async function run(client, interaction) {
         lastChapterNumber = parseFloat(chapterMatch[1]);
       }
       
-      // Comprobar si alguno de los valores obtenidos es null
-      if (!mangaTitle || !mangaStatus || !lastChapter) {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No se pudo obtener información de este manga. No es posible procesar la suscripción.", allowedMentions: { repliedUser: false }});
+      // Comprobar si el manga es un oneshot
+      else if (mangaType === 'one shot') {
+        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Este manga parece ser un **One Shot**. No puedes suscribirte a este tipo de mangas.", allowedMentions: { repliedUser: false }});
         return;
       }
       
@@ -195,7 +199,7 @@ export async function run(client, interaction) {
           });
           
           // Editar el mensaje original con el selector deshabilitado
-          await interaction.editReply({ content: "<:Advertencia:1302055825053057084> El selector ha caducado -⌛", components: disabledComponents });
+          await interaction.editReply({ content: "⌛ El selector ha caducado.", components: disabledComponents });
           
         } catch (error) {
           // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
@@ -228,7 +232,7 @@ export async function run(client, interaction) {
       .setTitle(`Suscripciones activas de: ${interaction.user.displayName}`)
       .setThumbnail(interaction.user.displayAvatarURL())
       .setDescription(result.map((manga) => `- [${manga.mangaTitle}](${manga.mangaUrl})`).join('\n'))
-      .setFooter({ text: "Puedes tener un máximo de 3 suscripciones activas." });
+      .setFooter({ text: "Puedes tener un máximo de 5 suscripciones activas." });
       
       // Enviar mensaje
       interaction.editReply({ embeds: [embed], allowedMentions: { repliedUser: false }});

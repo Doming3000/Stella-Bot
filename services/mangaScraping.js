@@ -28,18 +28,15 @@ async function webScraping(client) {
     // Caché para evitar realizar peticiones duplicadas
     const UrlCache = new Map();
     
-    // Comprobar si hay un nuevo capítulo
-    console.log(`🔄  - Procesando ${result.length} mangas...`);
-    
+    // Comprobar si hay un nuevo capítulo    
     // let i = 1;  // Depuración
     for (const row of result) {
       // console.log(`➡️  - (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
       await checkNewChapter(row, client, UrlCache);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Esperar medio segundo entre las consultas
       // i++;  // Depuración
     }
     
-    console.log(`↪️  - Web scraping completado. Se revisaron ${result.length} mangas.\n🕐  - La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
+    console.log(`↪️  - Web scraping completado, se procesaron ${result.length} mangas. La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
   } catch (error) {
     console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
   }
@@ -59,10 +56,23 @@ async function checkNewChapter(row, client, UrlCache) {
     if (UrlCache.has(mangaUrl)) {
       html = UrlCache.get(mangaUrl);
     } else {
-      // Simular un navegador real
-      const { data } = await axios.get(mangaUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }});
-      UrlCache.set(mangaUrl, data);
-      html = data;
+      try {
+        // Simular un navegador real
+        const { data } = await axios.get(mangaUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }});
+        UrlCache.set(mangaUrl, data);
+        html = data;
+        
+        // Esperar 2 segundos entre las consultas
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        // Manejar exceso de peticiones
+        if (error.response?.status === 429) {
+          console.warn(`⚠️  - Web scraping interrumpido por exceso de peticiones (429). Se alcazaron a procesar ${UrlCache.size} mangas.`);
+          return;
+        } else {
+          throw error;
+        }
+      }
     }
     
     // Miniatura del manga
