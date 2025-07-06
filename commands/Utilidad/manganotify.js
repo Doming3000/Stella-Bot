@@ -51,6 +51,12 @@ export async function run(client, interaction) {
       return;
     }
     
+    // Comprobar si el manga es un oneshot por medio de la url
+    else if (url.includes('one_shot')) {
+      await interaction.reply({ content: "<:Advertencia:1302055825053057084> Este manga parece ser un **One Shot**. No puedes suscribirte a este tipo de mangas.", flags: 64, allowedMentions: { repliedUser: false }});
+      return;
+    }
+    
     try {
       // Indicar que se está procesando la solicitud
       await interaction.deferReply();
@@ -76,10 +82,6 @@ export async function run(client, interaction) {
       const titleMatch = html.match(/<h1\s+class="element-title my-2"[^>]*>([\s\S]*?)<\/h1>/i);
       const mangaTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').replace(/\([\s\S]*?\)/g, '').replace(/\s+/g, ' ').trim() : null;
       
-      // Tipo de manga
-      const typeMatch = html.match(/<h1[^>]*class=["'][^"']*\bbook-type\b[^"']*["'][^>]*>\s*([^<]+)\s*<\/h1>/i);
-      const mangaType = typeMatch ? typeMatch[1].trim().toLowerCase() : null;
-      
       // Estado del manga
       const statusMatch = html.match(/<h5\s+class="element-subtitle">\s*Estado\s*<\/h5>\s*<span\s+class="book-status[^"]*">\s*([^<]+?)\s*<\/span>/i);
       const mangaStatus = statusMatch ? statusMatch[1].trim() : null;
@@ -93,12 +95,6 @@ export async function run(client, interaction) {
       if (chapterMatch) {
         lastChapter = `Capítulo ${chapterMatch[1]}`.trim();
         lastChapterNumber = parseFloat(chapterMatch[1]);
-      }
-      
-      // Comprobar si el manga es un oneshot
-      else if (mangaType === 'one shot') {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Este manga parece ser un **One Shot**. No puedes suscribirte a este tipo de mangas.", allowedMentions: { repliedUser: false }});
-        return;
       }
       
       // Comprobar el estado del manga antes de registrar la suscripción
@@ -134,8 +130,13 @@ export async function run(client, interaction) {
       // Select menú con las suscripciones      
       const options = result.map(row => ({
         label: row.mangaTitle.length > 100 ? row.mangaTitle.slice(0, 97) + '...' : row.mangaTitle,
-        // description: row.mangaUrl,
+        description: "ZonaTMO",
         value: String(row.id),
+        emoji: {
+          id: '1391176305147383858',
+          name: 'ZonaTMO',
+          animated: false
+        }
       }));
       
       const customId = `unsubscribeSelector-${interaction.user.id}`;
@@ -155,22 +156,15 @@ export async function run(client, interaction) {
       const replyMessage = await interaction.fetchReply();
       
       // Evento del colector
-      const filter = i => {
-        if (i.customId !== customId) return false;
-        
-        // Asegurarse de que solo el autor de la interacción pueda responder
+      const collector = replyMessage.createMessageComponentCollector({ time: 2 * 60 * 1000 });
+      let wasHandled = false;
+      
+      collector.on('collect', async i => {
+        // Asegurarse de que solo el usuario que hizo la interacción pueda manejarla
         if (i.user.id !== interaction.user.id) {
-          i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64, allowedMentions: { repliedUser: false }}).catch(() => {});
-          return false;
+          return i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64 });
         }
         
-        return true;
-      };
-      
-      const collector = replyMessage.createMessageComponentCollector({ filter, time: 2 * 60 * 1000 });
-      let wasHandled = false; // Variable para controlar si ya se manejó la interacción
-      
-      collector.on('collect', async i => {  
         // Eliminar los mangas seleccionados de la base de datos
         const selectedIds = i.values;
         
@@ -188,23 +182,15 @@ export async function run(client, interaction) {
       collector.on('end', async () => {
         if (wasHandled) return;
         
-        try {          
-          // Desactivar el select menu
-          const disabledComponents = replyMessage.components.map(row => {
-            return new ActionRowBuilder().addComponents(
-              row.components.map(component => 
-                StringSelectMenuBuilder.from(component).setDisabled(true)
-              )
-            );
-          });
-          
-          // Editar el mensaje original con el selector deshabilitado
-          await interaction.editReply({ content: "⌛ El selector ha caducado.", components: disabledComponents });
-          
-        } catch (error) {
-          // Si da error, puede deberse a que el mensaje se eliminó. Ignorar para evitar problemas.
-          return;
-        }
+        const disabledComponents = replyMessage.components.map(row => {
+          return new ActionRowBuilder().addComponents(
+            row.components.map(component => 
+              StringSelectMenuBuilder.from(component).setDisabled(true)
+            )
+          );
+        });
+        
+        await interaction.editReply({ components: disabledComponents }).catch(() => {});
       });
     } catch (error) {
       interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al ejecutar este comando.", allowedMentions: { repliedUser: false }});
