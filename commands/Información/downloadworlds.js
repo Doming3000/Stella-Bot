@@ -156,7 +156,7 @@ export async function run(client, interaction) {
   collector.on('collect', async i => {
     // Asegurarse de que solo el usuario que hizo la interacción pueda manejarla
     if (i.user.id !== interaction.user.id) {
-      return i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64 });
+      return i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64, allowedMentions: { repliedUser: false }});
     }
     
     // Reiniciar temporizador al hacer clic

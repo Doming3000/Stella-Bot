@@ -1,5 +1,6 @@
 import mysql from 'mysql';
 import dotenv from 'dotenv';
+import cron from "node-cron";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -25,6 +26,18 @@ export function query(sql, params = []) {
   });
 }
 
+// Función para el keep-alive
+function keepAlive () {
+  // Programa: Una consulta cada 15 minutos. 4 consultas por cada hora (HH:00, HH:15, HH:30, HH:45)
+  cron.schedule('0,15,30,45 * * * *', () => {
+    try {
+      pool.query('SELECT 1'); // Consulta simple
+    } catch (error) {
+      console.error('⚠️  - Se perdió la conexión con la base de datos: ', error.message);
+    }
+  });
+}
+
 // Función para comprobar la conexión al iniciar
 export function testConnection() {
   pool.getConnection((error, connection) => {
@@ -32,6 +45,7 @@ export function testConnection() {
       console.error('❌  - No se pudo conectar a la base de datos:', error.message);
     } else {
       console.log('✅  - La base de datos está conectada.');
+      keepAlive();
       connection.release(); // Liberar la conexión después de probar
     }
   });
