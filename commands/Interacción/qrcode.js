@@ -39,6 +39,7 @@ export async function run(client, interaction) {
   const base64Data = qrCode.replace(/^data:image\/png;base64,/, "");
   const imageBuffer = Buffer.from(base64Data, "base64");
   
-  const attachment = new AttachmentBuilder(imageBuffer, { name: `${url}.png` });
+  const sanitizedUrl = url.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const attachment = new AttachmentBuilder(imageBuffer, { name: `${sanitizedUrl}.png` });
   await interaction.reply({ files: [attachment] });  
 }

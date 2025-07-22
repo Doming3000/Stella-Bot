@@ -127,7 +127,7 @@ async function checkNewChapter(row, client, UrlCache) {
       .addComponents(
         new ButtonBuilder()
         .setEmoji('<:ZonaTMO:1391176305147383858>')
-        .setLabel("Ir a ZonaTMO")
+        .setLabel("Ver en ZonaTMO")
         .setURL(mangaUrl)
         .setStyle("Link"),
       );

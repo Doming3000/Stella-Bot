@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } from "discord.js";
 
 export async function handleMessage(message, client) {
-  const targetGuilds = ['787098787881287711'];
+  const targetGuilds = ['787098787881287711', '1396375735425564754'];
   const content = message.content.toLowerCase();
   
   // Ignorar mensajes de bots y otros servidores
@@ -36,7 +36,7 @@ export async function handleMessage(message, client) {
         // Eliminar el mensaje
         collector.stop();
         await sentMessage.delete();
-        console.log(`📃  - Se ha quitado un mensaje de respuesta. ${authorId} | ${message.content}`);
+        console.log(`📃  - Se ha quitado un mensaje de respuesta a ${authorId}. "${message.content}"`);
       }
       
       else if (i.customId === 'like') {
@@ -47,6 +47,7 @@ export async function handleMessage(message, client) {
         
         // Reaccionar al mensaje
         await sentMessage.edit({ components: [] });
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay de 1 segundo
         await sentMessage.react('💖');
       }
     });
@@ -71,14 +72,13 @@ export async function handleMessage(message, client) {
     let sentMessage;
     
     switch (true) {
-      // Prueba, para añadir más casos repetir código.
-      case [";,.:"].some(word => content.includes(word)):
-      sentMessage = await reply(message, { content: "<:Info:1345848332760907807>", components: [actionRow], allowedMentions: { repliedUser: false }});
-      break;
+      // case ["", ""].some(word => content.includes(word)):
+      // sentMessage = await reply(message, { content: "", components: [actionRow], allowedMentions: { repliedUser: false }});
+      // break;
       
       // Dudas sobre como suscribirse
       case["como me suscribo", "como suscribirse", "como suscribirme", "quiero suscribirme"].some(word => content.includes(word)):
-      sentMessage = await reply(message, { content: "### <:Info:1345848332760907807> Como suscribirse a un manga\nPara suscribirte a un manga tienes que ejecutar el comando </manga-notify subscribe:1377840648761118822>, brindando como parámetro la URL del manga al que deseas suscribirte.\n\n**Ejemplo de uso**: `/manga-notify subscribe https://zonatmo.com/library/manga/3581/spyxfamily`", components: [actionRow], allowedMentions: { repliedUser: false }});
+      sentMessage = await reply(message, { content: "### <:Info:1345848332760907807> Como suscribirse a un manga\nPara suscribirte a un manga tienes que ejecutar el comando </manga-notify subscribe:1377840648761118822>, brindando como parámetro la URL del manga al que deseas suscribirte.\n### 📋 Ejemplo de uso:\n```/manga-notify subscribe https://zonatmo.com/library/manga/3581/spyxfamily```", components: [actionRow], allowedMentions: { repliedUser: false }});
       break;
       
       // Predeterminado
@@ -86,6 +86,6 @@ export async function handleMessage(message, client) {
       break;
     }
   } catch (error) {
-    console.log(`No se ha podido responder al mensaje: ${message.id} | ${message.content}. `, error);
+    console.log(`No se ha podido responder al mensaje de ${message.id}. "${message.content}": `, error);
   }
 }
