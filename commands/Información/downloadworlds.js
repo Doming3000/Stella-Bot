@@ -121,33 +121,29 @@ export async function run(client, interaction) {
   };
   
   // Botones
-  const getActionRow = () => {
-    const { download } = pages[currentPage];
+  const actionRow = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+    .setEmoji('<:Retroceder:1390497510077759628>')
+    .setCustomId('goLeft')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(currentPage === 0),
     
-    return new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-      .setEmoji('<:Retroceder:1390497510077759628>')
-      .setCustomId('goLeft')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(currentPage === 0),
-      
-      new ButtonBuilder()
-      .setEmoji(download.emoji)
-      .setLabel('Descargar')
-      .setURL(download.url)
-      .setStyle(ButtonStyle.Link),
-      
-      new ButtonBuilder()
-      .setEmoji('<:Avanzar:1390497492671533096>')
-      .setCustomId('goRight')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(currentPage === pages.length - 1),
-    );
-  };
+    new ButtonBuilder()
+    .setEmoji(download.emoji)
+    .setLabel('Descargar')
+    .setURL(download.url)
+    .setStyle(ButtonStyle.Link),
+    
+    new ButtonBuilder()
+    .setEmoji('<:Avanzar:1390497492671533096>')
+    .setCustomId('goRight')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(currentPage === pages.length - 1),
+  );
   
   // Enviar mensaje
-  await interaction.reply({ embeds: [generateEmbed(currentPage)], components: [getActionRow()], allowedMentions: { repliedUser: false }});
+  await interaction.reply({ embeds: [generateEmbed(currentPage)], components: [actionRow], allowedMentions: { repliedUser: false }});
   const message = await interaction.fetchReply();
   
   // Evento del colector
@@ -156,7 +152,7 @@ export async function run(client, interaction) {
   collector.on('collect', async i => {
     // Asegurarse de que solo el usuario que hizo la interacción pueda manejarla
     if (i.user.id !== interaction.user.id) {
-      return i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes interferir con las solicitudes de otros usuarios.`, flags: 64, allowedMentions: { repliedUser: false }});
+      return i.reply({ content: `<:Advertencia:1302055825053057084> <@${i.user.id}> No puedes responder a las solicitudes de otros usuarios.`, flags: 64, allowedMentions: { repliedUser: false }});
     }
     
     // Reiniciar temporizador al hacer clic
@@ -173,9 +169,9 @@ export async function run(client, interaction) {
   
   // Finalizar el colector
   collector.on('end', async () => {
-    const disabledRow = getActionRow();
-    disabledRow.components.forEach(c => {
-      if (c.data.style !== ButtonStyle.Link) c.setDisabled(true);
+    const disabledRow = ActionRowBuilder.from(actionRow);
+    disabledRow.components.forEach(btn => {
+      if (btn.data.style !== ButtonStyle.Link) btn.setDisabled(true);
     });
     
     await message.edit({ components: [disabledRow] }).catch(() => {});

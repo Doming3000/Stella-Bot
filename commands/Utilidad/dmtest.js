@@ -4,13 +4,13 @@ export const data = new SlashCommandBuilder()
 .setName('dm-test')
 .setDescription('Comprueba la disponibilidad para recibir mensajes directos de la aplicación.')
 .addStringOption(option =>
-  option.setName('contenido')
+  option.setName('content')
   .setDescription('Opcional. Contenido del mensaje.')
   .setRequired(false)
 );
 
 export async function run(client, interaction) {
-  const contenido = interaction.options.getString('contenido');
+  const contenido = interaction.options.getString('content');
   
   try {    
     // Enviar mensaje directo al usuario

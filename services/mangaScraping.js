@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { query } from "../database.js";
 import cron from "node-cron";
 import dotenv from 'dotenv';
@@ -102,7 +102,17 @@ async function checkNewChapter(row, client, UrlCache) {
       
       // Enviar un mensaje directo al usuario
       try {
-        await user.send({ content: `<:Info:1345848332760907807> El manga al que estabas suscrito: **${mangaTitle}**, ha sido marcado como finalizado.`, allowedMentions: { repliedUser: false }});
+        const embed = new EmbedBuilder()
+        .setColor(0x2957ba)
+        .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
+        .setTitle(mangaTitle.length > 256 ? mangaTitle.slice(0, 253) + "..." : mangaTitle)
+        .setImage(mangaImage)
+        .setFields(
+          { name: "📕 - Manga finalizado", value: `➜ Este manga ha finalizado su serialización en ZonaTMO.`, inline: true },
+        )
+        .setFooter({ text: "No necesitas cancelar tu suscripción." });
+        
+        await user.send({ content: `<:Info:1345848332760907807> El manga: **${mangaTitle}** ha finalizado.`, embeds: [embed], allowedMentions: { repliedUser: false }});
         return;
       } catch (error) {
         console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
@@ -129,7 +139,7 @@ async function checkNewChapter(row, client, UrlCache) {
         .setEmoji('<:ZonaTMO:1391176305147383858>')
         .setLabel("Ver en ZonaTMO")
         .setURL(mangaUrl)
-        .setStyle("Link"),
+        .setStyle(ButtonStyle.Link),
       );
       
       // Actualizar el último capítulo en la base de datos
