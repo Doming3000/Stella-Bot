@@ -15,6 +15,26 @@ const { ComponentType } = require('discord-api-types/v10');
  */
 
 /**
+ * @typedef {Object} ModalComponentData
+ * @property {string} title The title of the modal
+ * @property {string} customId The custom id of the modal
+ * @property {Array<ActionRow|TextDisplayComponentData|LabelData>} components The components within this modal
+ */
+
+/**
+ * @typedef {StringSelectMenuComponentData|TextInputComponentData|UserSelectMenuComponentData|
+ * RoleSelectMenuComponentData|MentionableSelectMenuComponentData|ChannelSelectMenuComponentData|
+ * FileUploadComponentData} ComponentInLabelData
+ */
+
+/**
+ * @typedef {BaseComponentData} LabelData
+ * @property {string} label The label to use
+ * @property {string} [description] The optional description for the label
+ * @property {ComponentInLabelData} component The component within the label
+ */
+
+/**
  * @typedef {BaseComponentData} ButtonComponentData
  * @property {ButtonStyle} style The style of the button
  * @property {boolean} [disabled] Whether this button is disabled
@@ -22,6 +42,50 @@ const { ComponentType } = require('discord-api-types/v10');
  * @property {APIMessageComponentEmoji} [emoji] The emoji on this button
  * @property {string} [customId] The custom id of the button
  * @property {string} [url] The URL of the button
+ */
+
+/**
+ * @typedef {BaseComponentData} FileUploadComponentData
+ * @property {string} customId The custom id of the file upload
+ * @property {number} [minValues] The minimum number of files that can be uploaded (0-10)
+ * @property {number} [maxValues] The maximum number of files that can be uploaded (1-10)
+ * @property {boolean} [required] Whether this component is required in modals
+ */
+
+/**
+ * @typedef {BaseComponentData} BaseSelectMenuComponentData
+ * @property {string} customId The custom id of the select menu
+ * @property {boolean} [disabled] Whether the select menu is disabled or not
+ * @property {number} [maxValues] The maximum amount of options that can be selected
+ * @property {number} [minValues] The minimum amount of options that can be selected
+ * @property {string} [placeholder] The placeholder of the select menu
+ * @property {boolean} [required] Whether this component is required in modals
+ */
+
+/**
+ * @typedef {BaseSelectMenuComponentData} StringSelectMenuComponentData
+ * @property {SelectMenuComponentOptionData[]} [options] The options in this select menu
+ */
+
+/**
+ * @typedef {BaseSelectMenuComponentData} UserSelectMenuComponentData
+ * @property {APISelectMenuDefaultValue[]} [defaultValues] The default selected values in this select menu
+ */
+
+/**
+ * @typedef {BaseSelectMenuComponentData} RoleSelectMenuComponentData
+ * @property {APISelectMenuDefaultValue[]} [defaultValues] The default selected values in this select menu
+ */
+
+/**
+ * @typedef {BaseSelectMenuComponentData} MentionableSelectMenuComponentData
+ * @property {APISelectMenuDefaultValue[]} [defaultValues] The default selected values in this select menu
+ */
+
+/**
+ * @typedef {BaseSelectMenuComponentData} ChannelSelectMenuComponentData
+ * @property {APISelectMenuDefaultValue[]} [defaultValues] The default selected values in this select menu
+ * @property {ChannelType[]} [channelTypes] The types of channels that can be selected
  */
 
 /**
@@ -141,44 +205,7 @@ const { ComponentType } = require('discord-api-types/v10');
  * @ignore
  */
 function createComponent(data) {
-  if (data instanceof Component) {
-    return data;
-  }
-
-  switch (data.type) {
-    case ComponentType.ActionRow:
-      return new ActionRow(data);
-    case ComponentType.Button:
-      return new ButtonComponent(data);
-    case ComponentType.StringSelect:
-      return new StringSelectMenuComponent(data);
-    case ComponentType.TextInput:
-      return new TextInputComponent(data);
-    case ComponentType.UserSelect:
-      return new UserSelectMenuComponent(data);
-    case ComponentType.RoleSelect:
-      return new RoleSelectMenuComponent(data);
-    case ComponentType.MentionableSelect:
-      return new MentionableSelectMenuComponent(data);
-    case ComponentType.ChannelSelect:
-      return new ChannelSelectMenuComponent(data);
-    case ComponentType.Container:
-      return new ContainerComponent(data);
-    case ComponentType.TextDisplay:
-      return new TextDisplayComponent(data);
-    case ComponentType.File:
-      return new FileComponent(data);
-    case ComponentType.MediaGallery:
-      return new MediaGalleryComponent(data);
-    case ComponentType.Section:
-      return new SectionComponent(data);
-    case ComponentType.Separator:
-      return new SeparatorComponent(data);
-    case ComponentType.Thumbnail:
-      return new ThumbnailComponent(data);
-    default:
-      return new Component(data);
-  }
+  return data instanceof Component ? data : new (ComponentTypeToComponent[data.type] ?? Component)(data);
 }
 
 /**
@@ -188,30 +215,7 @@ function createComponent(data) {
  * @ignore
  */
 function createComponentBuilder(data) {
-  if (data instanceof ComponentBuilder) {
-    return data;
-  }
-
-  switch (data.type) {
-    case ComponentType.ActionRow:
-      return new ActionRowBuilder(data);
-    case ComponentType.Button:
-      return new ButtonBuilder(data);
-    case ComponentType.StringSelect:
-      return new StringSelectMenuBuilder(data);
-    case ComponentType.TextInput:
-      return new TextInputBuilder(data);
-    case ComponentType.UserSelect:
-      return new UserSelectMenuBuilder(data);
-    case ComponentType.RoleSelect:
-      return new RoleSelectMenuBuilder(data);
-    case ComponentType.MentionableSelect:
-      return new MentionableSelectMenuBuilder(data);
-    case ComponentType.ChannelSelect:
-      return new ChannelSelectMenuBuilder(data);
-    default:
-      return new ComponentBuilder(data);
-  }
+  return data instanceof ComponentBuilder ? data : new (ComponentTypeToBuilder[data.type] ?? ComponentBuilder)(data);
 }
 
 /**
@@ -259,6 +263,7 @@ const ChannelSelectMenuComponent = require('../structures/ChannelSelectMenuCompo
 const Component = require('../structures/Component');
 const ContainerComponent = require('../structures/ContainerComponent');
 const FileComponent = require('../structures/FileComponent');
+const LabelComponent = require('../structures/LabelComponent');
 const MediaGalleryComponent = require('../structures/MediaGalleryComponent');
 const MentionableSelectMenuBuilder = require('../structures/MentionableSelectMenuBuilder');
 const MentionableSelectMenuComponent = require('../structures/MentionableSelectMenuComponent');
@@ -274,3 +279,33 @@ const TextInputComponent = require('../structures/TextInputComponent');
 const ThumbnailComponent = require('../structures/ThumbnailComponent');
 const UserSelectMenuBuilder = require('../structures/UserSelectMenuBuilder');
 const UserSelectMenuComponent = require('../structures/UserSelectMenuComponent');
+
+const ComponentTypeToComponent = {
+  [ComponentType.ActionRow]: ActionRow,
+  [ComponentType.Button]: ButtonComponent,
+  [ComponentType.StringSelect]: StringSelectMenuComponent,
+  [ComponentType.TextInput]: TextInputComponent,
+  [ComponentType.UserSelect]: UserSelectMenuComponent,
+  [ComponentType.RoleSelect]: RoleSelectMenuComponent,
+  [ComponentType.MentionableSelect]: MentionableSelectMenuComponent,
+  [ComponentType.ChannelSelect]: ChannelSelectMenuComponent,
+  [ComponentType.Container]: ContainerComponent,
+  [ComponentType.TextDisplay]: TextDisplayComponent,
+  [ComponentType.File]: FileComponent,
+  [ComponentType.MediaGallery]: MediaGalleryComponent,
+  [ComponentType.Section]: SectionComponent,
+  [ComponentType.Separator]: SeparatorComponent,
+  [ComponentType.Thumbnail]: ThumbnailComponent,
+  [ComponentType.Label]: LabelComponent,
+};
+
+const ComponentTypeToBuilder = {
+  [ComponentType.ActionRow]: ActionRowBuilder,
+  [ComponentType.Button]: ButtonBuilder,
+  [ComponentType.StringSelect]: StringSelectMenuBuilder,
+  [ComponentType.TextInput]: TextInputBuilder,
+  [ComponentType.UserSelect]: UserSelectMenuBuilder,
+  [ComponentType.RoleSelect]: RoleSelectMenuBuilder,
+  [ComponentType.MentionableSelect]: MentionableSelectMenuBuilder,
+  [ComponentType.ChannelSelect]: ChannelSelectMenuBuilder,
+};

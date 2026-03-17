@@ -26,11 +26,6 @@ export async function handleMessage(message, client) {
     await message.react("🔥");
     break;
     
-    // Tracking device
-    case content.includes("tracking device"):
-    await message.react("🔥");
-    break;
-    
     // Easter egg
     case content.includes("easter egg"):
     await message.react("🥚");

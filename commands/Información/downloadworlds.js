@@ -121,26 +121,32 @@ export async function run(client, interaction) {
   };
   
   // Botones
-  const actionRow = new ActionRowBuilder()
-  .addComponents(
-    new ButtonBuilder()
-    .setEmoji('<:Retroceder:1390497510077759628>')
-    .setCustomId('goLeft')
-    .setStyle(ButtonStyle.Secondary)
-    .setDisabled(currentPage === 0),
+  const getActionRow = () => {
+    const page = pages[currentPage];
     
-    new ButtonBuilder()
-    .setEmoji(download.emoji)
-    .setLabel('Descargar')
-    .setURL(download.url)
-    .setStyle(ButtonStyle.Link),
-    
-    new ButtonBuilder()
-    .setEmoji('<:Avanzar:1390497492671533096>')
-    .setCustomId('goRight')
-    .setStyle(ButtonStyle.Secondary)
-    .setDisabled(currentPage === pages.length - 1),
-  );
+    return new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+      .setEmoji('<:Retroceder:1390497510077759628>')
+      .setCustomId('goLeft')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage === 0),
+      
+      new ButtonBuilder()
+      .setEmoji(page.download.emoji)
+      .setLabel('Descargar')
+      .setURL(page.download.url)
+      .setStyle(ButtonStyle.Link),
+      
+      new ButtonBuilder()
+      .setEmoji('<:Avanzar:1390497492671533096>')
+      .setCustomId('goRight')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(currentPage === pages.length - 1),
+    );
+  };
+  
+  let actionRow = getActionRow();
   
   // Enviar mensaje
   await interaction.reply({ embeds: [generateEmbed(currentPage)], components: [actionRow], allowedMentions: { repliedUser: false }});
@@ -169,7 +175,7 @@ export async function run(client, interaction) {
   
   // Finalizar el colector
   collector.on('end', async () => {
-    const disabledRow = ActionRowBuilder.from(actionRow);
+    const disabledRow = getActionRow();
     disabledRow.components.forEach(btn => {
       if (btn.data.style !== ButtonStyle.Link) btn.setDisabled(true);
     });

@@ -24,19 +24,25 @@ async function webScraping(client) {
     
     // Consultar la base de datos
     const result = await query('SELECT * FROM mangasuscription');
+    if (result.length === 0) return;
     
     // Caché para evitar realizar peticiones duplicadas
     const UrlCache = new Map();
     
-    // Comprobar si hay un nuevo capítulo    
-    // let i = 1;  // Depuración
+    // Comprobar si hay un nuevo capítulo        
+    let processed = 0;
+    
     for (const row of result) {
-      // console.log(`➡️  - (${i}/${result.length}) Revisando: ${row.mangaTitle}`); // Depuración
-      await checkNewChapter(row, client, UrlCache);
-      // i++;  // Depuración
+      const status = await checkNewChapter(row, client, UrlCache);
+      
+      if (status === 'stop') {
+        break;
+      }
+      
+      processed++;
     }
     
-    console.log(`↪️  - Web scraping completado, se procesaron ${result.length} mangas. La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
+    console.log(`↪️  - Web scraping completado, se procesaron ${processed} mangas. La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
   } catch (error) {
     console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
   }
@@ -65,10 +71,16 @@ async function checkNewChapter(row, client, UrlCache) {
         // Esperar 2 segundos entre las consultas
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
+        // Manejar caso de sitio en mantenimiento
+        if (error.response?.status === 503) {
+          console.warn(`⚠️  - El sitio se encuentra actualmente en mantenimiento, no es posible continuar con el web scraping (503).`);
+          return 'stop';
+        }
+        
         // Manejar exceso de peticiones
         if (error.response?.status === 429) {
-          console.warn(`⚠️  - Web scraping interrumpido por exceso de peticiones (429). Se alcazaron a procesar ${UrlCache.size} mangas.`);
-          return;
+          console.warn(`⚠️  - Web scraping interrumpido por exceso de peticiones (429).`);
+          return 'stop';
         } else {
           throw error;
         }

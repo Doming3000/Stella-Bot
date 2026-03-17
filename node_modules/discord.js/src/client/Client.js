@@ -277,7 +277,6 @@ class Client extends BaseClient {
     const code = resolveInviteCode(invite);
     const query = makeURLSearchParams({
       with_counts: true,
-      with_expiration: true,
       guild_scheduled_event_id: options?.guildScheduledEventId,
     });
     const data = await this.rest.get(Routes.invite(code), { query });
@@ -523,7 +522,7 @@ class Client extends BaseClient {
   }
 
   /**
-   * Calls {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval} on a script
+   * Calls {@link https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/eval} on a script
    * with the client as `this`.
    * @param {string} script Script to eval
    * @returns {*}
@@ -605,7 +604,7 @@ module.exports = Client;
  */
 
 /**
- * A {@link https://developer.twitter.com/en/docs/twitter-ids Twitter snowflake},
+ * A {@link https://docs.x.com/resources/fundamentals/x-ids Twitter snowflake},
  * except the epoch is 2015-01-01T00:00:00.000Z.
  *
  * If we have a snowflake '266241948824764416' we can represent it as binary:
@@ -637,6 +636,11 @@ module.exports = Client;
 /**
  * @external ImageURLOptions
  * @see {@link https://discord.js.org/docs/packages/rest/stable/ImageURLOptions:Interface}
+ */
+
+/**
+ * @external EmojiURLOptions
+ * @see {@link https://discord.js.org/docs/packages/rest/stable/EmojiURLOptions:TypeAlias}
  */
 
 /**
