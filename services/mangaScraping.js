@@ -38,11 +38,10 @@ async function webScraping(client) {
       if (status === 'stop') {
         break;
       }
-      
       processed++;
     }
     
-    console.log(`↪️  - Web scraping completado, se procesaron ${processed} mangas. La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
+    console.log(`↪️  - Web scraping terminado. Se procesaron ${processed} mangas. La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
   } catch (error) {
     console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
   }
