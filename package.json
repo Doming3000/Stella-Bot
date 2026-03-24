@@ -10,8 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/voice": "^0.19.2",
     "axios": "^1.7.9",
-    "discord.js": "^14.17.2",
+    "discord.js": "^14.25.1",
     "dotenv": "^16.4.7",
     "fs": "^0.0.2",
     "mysql": "^2.18.1",
