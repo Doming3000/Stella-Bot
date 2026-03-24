@@ -9,7 +9,7 @@ export const data = new SlashCommandBuilder()
   .setRequired(true)
 );
 
-// Función auxiliar para confirmar la interacción
+// Función para confirmar la interacción
 async function sendConfirmation(interaction) {
   const reply = await interaction.reply({ content: "<:Done:1326292171099345006> ¡Mensaje enviado!", flags: 64, allowedMentions: { repliedUser: false }});
   
@@ -20,22 +20,25 @@ async function sendConfirmation(interaction) {
 export async function run(client, interaction) {
   const contenido = interaction.options.getString('contenido');
   
-  // Registrar en la consola al usuario que ejecutó el comando
+  // Logear al usuario que ejecutó el comando
   console.log(`📃  - /say ejecutado por ${interaction.user.tag} | ${interaction.user.id}: ${contenido}`);
   
-  // Comprobar si existe un canal de interacción; si no, se asume que es un mensaje directo
+  // Comprobar si existe un canal de interacción. Si no, se asume que es un mensaje directo
   if (!interaction.channel) {
     sendConfirmation(interaction);
     interaction.user.send({ content: contenido });
-  } else {
-    // Verificar si el contenido incluye menciones masivas
-    const roleMentionPattern = /<@&\d+>/;
-    
-    if (contenido.includes('@everyone') || contenido.includes('@here') || roleMentionPattern.test(contenido)) {
-      await interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', flags: 64 });
-    } else {
-      sendConfirmation(interaction);
-      interaction.channel.send({ content: contenido });
-    }
+    return;
   }
+  
+  // Verificar si el contenido incluye menciones masivas
+  const roleMentionPattern = /<@&\d+>/;
+  
+  if (contenido.includes('@everyone') || contenido.includes('@here') || roleMentionPattern.test(contenido)) {
+    await interaction.reply({ content: '<:Advertencia:1302055825053057084> ¿Estás tratando de hacer una mención masiva? Lo siento, no puedes hacer eso.', flags: 64 });
+    return;
+  }
+  
+  // Enviar el mensaje
+  sendConfirmation(interaction);
+  interaction.channel.send({ content: contenido });
 }

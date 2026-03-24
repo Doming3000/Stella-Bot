@@ -35,10 +35,8 @@ const nodeVersion = process.version;
 async function getOwner(interaction) {
   const ownerName = '**Doming3000**';
   
-  // Comprobar si existe un canal de interacción; Si no, se asume que es un mensaje directo
-  if (!interaction.guild) {
-    return ownerName;
-  }
+  // Comprobar si existe un canal de interacción. Si no, se asume que es un mensaje directo
+  if (!interaction.guild) return ownerName;
   
   try {
     // Intentar encontrar al usuario en el servidor mediante su ID
@@ -60,7 +58,7 @@ export async function run(client, interaction) {
   .setDescription(`**¡Hola!**\nSoy una aplicación privada diseñada para servidores de confianza.\nLlevo en funcionamiento desde <t:${uptime}:R> y cuento con **${commandCount}** comandos.`)
   .addFields(
     { name: "📚 - Versiones", value: `➜ <:Discord:1302057111550824561> **Discord.js**: \`${discordVersion}\`\n➜ <:Nodejs:1302056618971889757> **Node.js**: \`${nodeVersion}\``, inline: true },
-    { name: "📃 - Información Adicional", value: `➜ <:Javascript:1302106857724448872> Programado con **JavaScript**\n➜ :technologist: Desarollado por: ${ownerMention}`, inline: true }
+    { name: "📃 - Información adicional", value: `➜ <:Javascript:1302106857724448872> Programado con **JavaScript**\n➜ :technologist: Desarollado por: ${ownerMention}`, inline: true }
   );
   
   await interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } });

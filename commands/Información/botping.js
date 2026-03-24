@@ -8,16 +8,15 @@ export const data = new SlashCommandBuilder()
 
 export async function run(client, interaction) {
   // Obtener información del entorno
-  const totalMem = os.totalmem();
   const stats = await pidusage(process.pid);
-  
-  const formatBytes = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)}MB`;
+  const formatBytes = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
+  const uptime = Math.floor((new Date().getTime() - client.uptime) / 1000);
   
   const embed = new EmbedBuilder()
   .setColor(0x779ecb)
   .setAuthor({ name: `${client.user.username} - ${interaction.commandName}`, iconURL: client.user.displayAvatarURL()})
   .setTitle('🏓 ¡Pong!')
-  .setDescription(`- 📡 - Ping: \`${client.ws.ping}ms\`\n- 🧠 - Uso de memoria: \`${formatBytes(stats.memory)} / ${formatBytes(totalMem)}\`\n- 🤖 - Uso del CPU: \`${stats.cpu.toFixed(2)}%\``)
+  .setDescription(`- 📡 - Ping: \`${client.ws.ping}ms\`\n- 📆 - Uptime: <t:${uptime}:f>\n- 🧠 - Uso de memoria: \`${formatBytes(stats.memory)} / 512 MiB\`\n- 🤖 - Uso del CPU: \`${stats.cpu.toFixed(2)}%\``)
   
   interaction.reply({ embeds: [embed], allowedMentions: { repliedUser: false } })
 }

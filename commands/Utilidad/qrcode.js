@@ -3,15 +3,16 @@ import qrcode from "qrcode";
 
 export const data = new SlashCommandBuilder()
 .setName('qrcode')
-.setDescription('Genera un código QR para una dirección URL.')
+.setDescription('Genera un código QR.')
 .addStringOption(option =>
-  option.setName('url')
-  .setDescription('URL a codificar.')
+  option.setName('content')
+  .setDescription('Contenido a codificar.')
   .setRequired(true)
+  .setMaxLength(2000)
 )
 .addStringOption(option =>
   option.setName('level')
-  .setDescription('Nivel de corrección de errores (opcional, por defecto: Medio).')
+  .setDescription('Nivel de corrección de errores (Por defecto: Medio).')
   .setRequired(false)
   .addChoices(
     { name: 'Bajo', value: 'L' },
@@ -22,79 +23,55 @@ export const data = new SlashCommandBuilder()
 )
 .addIntegerOption(option =>
   option.setName('scale')
-  .setDescription('Tamaño de la imagen (opcional, por defecto: 10).')
+  .setDescription('Tamaño de la imagen (Por defecto: 8).')
   .setRequired(false)
   .setMinValue(4)
   .setMaxValue(15)
 )
 .addIntegerOption(option =>
   option.setName('margin')
-  .setDescription('Margen del código QR (opcional, por defecto: 5).')
+  .setDescription('Margen del código QR (Por defecto: 4).')
   .setRequired(false)
   .setMinValue(1)
   .setMaxValue(20)
 )
 .addStringOption(option =>
   option.setName('name')
-  .setDescription('Nombre del archivo (opcional, por defecto: qrcode).')
+  .setDescription('Nombre del archivo (Por defecto: qrcode).')
   .setRequired(false)
+  .setMaxLength(255)
 );
-
-// Función para verificar si una URL es válida
-function isValidURL(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
 
 // Función para limpiar el nombre del archivo
 function cleanFileName(name) {
-  if (!name) {
-    return 'qrcode';
-  }
+  if (!name) return 'qrcode';
   
-  return name.replace(/[^a-zA-Z0-9]/g, '');
+  // Acentos y caracteres inválidos (_). Solo alfanuméricos. No multiples espacios. No espacios al inicio/final. Si queda vacío, usar qrcode. 
+  return name.normalize("NFD").replace(/[\u0300-\u036f\\\/:*?"<>|]/g, "_").replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, " ") .trim() || 'qrcode';
 }
 
 export async function run(client, interaction) {
-  const url = interaction.options.getString('url');
-  const level = interaction.options.getString('level');
-  const scale = interaction.options.getInteger('scale');
-  const margin = interaction.options.getInteger('margin');
-  const name = cleanFileName(interaction.options.getString('name'));
-  
-  // Verificar si el valor proporcionado es una URL válida.
-  if (!isValidURL(url)) {
-    await interaction.reply({ content: "<:Advertencia:1302055825053057084> Debes proporcionar una URL válida.", flags: 64, allowedMentions: { repliedUser: false } });
-    return;
+  try {
+    const content = interaction.options.getString('content');
+    const level = interaction.options.getString('level') || 'M';
+    const scale = interaction.options.getInteger('scale') || 8;
+    const margin = interaction.options.getInteger('margin') || 4;
+    const name = cleanFileName(interaction.options.getString('name'));
+    
+    // Generar el código QR y envíar el mensaje
+    const qrCode = await qrcode.toDataURL(content, {
+      errorCorrectionLevel: level,
+      scale: scale,
+      margin: margin
+    });
+    
+    const base64Data = qrCode.replace(/^data:image\/png;base64,/, "");
+    const imageBuffer = Buffer.from(base64Data, "base64");
+    
+    const attachment = new AttachmentBuilder(imageBuffer, { name: `${name}.png` });
+    await interaction.reply({ files: [attachment] });
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: "<:Advertencia:1302055825053057084> Ha ocurrido un error al generar el código QR.", flags: 64, allowedMentions: { repliedUser: false }});
   }
-  
-  // Valores por defecto si no se proporcionan
-  else if (!level) {
-    level = 'M';
-  }
-  
-  else if (!scale) {
-    scale = 10;
-  }
-  
-  else if (!margin) {
-    margin = 5;
-  }
-  
-  // Generar el código QR y envíar el mensaje
-  const qrCode = await qrcode.toDataURL(url, {
-    errorCorrectionLevel: level,
-    scale: scale,
-    margin: margin
-  });
-  
-  const base64Data = qrCode.replace(/^data:image\/png;base64,/, "");
-  const imageBuffer = Buffer.from(base64Data, "base64");
-  
-  const attachment = new AttachmentBuilder(imageBuffer, { name: `${name}.png` });
-  await interaction.reply({ files: [attachment] });  
 }

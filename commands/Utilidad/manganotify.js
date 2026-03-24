@@ -42,7 +42,12 @@ export async function run(client, interaction) {
   const subcommand = interaction.options.getSubcommand();
   const userID = interaction.user.id;
   
-  if (subcommand === 'subscribe') {
+  if (subcommand === 'subscribe' || 'unsubscribe') {
+    await interaction.reply({ content: "<:Advertencia:1302055825053057084> Este comando está temporalmente fuera de servicio.", allowedMentions: { repliedUser: false }});
+    return;
+  }
+  
+  if (subcommand === 'subscribe1') {
     const url = interaction.options.getString('manga-url');
     
     // Verificar si el valor proporcionado es una URL válida.
@@ -114,7 +119,7 @@ export async function run(client, interaction) {
     }
   }
   
-  else if (subcommand === 'unsubscribe') {
+  else if (subcommand === 'unsubscribe1') {
     try {
       // Indicar que se está procesando la solicitud
       await interaction.deferReply();

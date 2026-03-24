@@ -29,15 +29,19 @@ async function webScraping(client) {
     // Caché para evitar realizar peticiones duplicadas
     const UrlCache = new Map();
     
-    // Comprobar si hay un nuevo capítulo        
+    // Comprobar si hay un nuevo capítulo
     let processed = 0;
     
     for (const row of result) {
       const status = await checkNewChapter(row, client, UrlCache);
       
-      if (status === 'stop') {
-        break;
-      }
+      // Salir del bucle si se para el scraping
+      if (status === 'stop') break;
+      
+      // Crear un delay entre peticiones
+      const delay = 1500 + Math.random() * 2000; 
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
       processed++;
     }
     
@@ -55,7 +59,7 @@ async function checkNewChapter(row, client, UrlCache) {
     // Obtener al usuario (desde el caché si existe)
     const user = client.users.cache.get(userID) ?? await client.users.fetch(userID);
     
-    // Usar caché para evitar realizar peticiones duplicadas
+    // Usar caché para no duplicar peticiones
     let html;
     
     if (UrlCache.has(mangaUrl)) {
@@ -66,11 +70,8 @@ async function checkNewChapter(row, client, UrlCache) {
         const { data } = await axios.get(mangaUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }});
         UrlCache.set(mangaUrl, data);
         html = data;
-        
-        // Esperar 2 segundos entre las consultas
-        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
-        // Manejar caso de sitio en mantenimiento
+        // Manejar sitio en mantenimiento
         if (error.response?.status === 503) {
           console.warn(`⚠️  - El sitio se encuentra actualmente en mantenimiento, no es posible continuar con el web scraping (503).`);
           return 'stop';
@@ -106,42 +107,27 @@ async function checkNewChapter(row, client, UrlCache) {
       newChapterNumber = numMatch ? parseFloat(numMatch[1]) : null;
     }
     
-    // Comprobar el estado del manga para decidir si debe ser eliminado
-    if (mangaStatus === 'Finalizado') {
-      // Remover el manga de la base de datos
-      await query('DELETE FROM mangasuscription WHERE mangaUrl = ?', [mangaUrl]);
-      
-      // Enviar un mensaje directo al usuario
-      try {
-        const embed = new EmbedBuilder()
-        .setColor(0x2957ba)
-        .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
-        .setTitle(mangaTitle.length > 256 ? mangaTitle.slice(0, 253) + "..." : mangaTitle)
-        .setImage(mangaImage)
-        .setFields(
-          { name: "📕 - Manga finalizado", value: `➜ Este manga ha finalizado su serialización en ZonaTMO.`, inline: true },
-        )
-        .setFooter({ text: "No necesitas cancelar tu suscripción." });
-        
-        await user.send({ content: `<:Info:1345848332760907807> El manga: **${mangaTitle}** ha finalizado.`, embeds: [embed], allowedMentions: { repliedUser: false }});
-        return;
-      } catch (error) {
-        console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
-        return;
-      }
-    }
-    
     // Comprobar si hay un nuevo capítulo
-    else if (newChapterNumber && newChapterNumber > parseFloat(lastChapter)) {
+    if (newChapterNumber && newChapterNumber > parseFloat(lastChapter)) {
+      const isFinished = mangaStatus === 'Finalizado';
+      
+      if (isFinished) {
+        // Remover el manga de la base de datos
+        await query('DELETE FROM mangasuscription WHERE mangaUrl = ?', [mangaUrl]);
+      } else {
+        // Actualizar el último capítulo en la base de datos
+        await query('UPDATE mangasuscription SET lastChapter = ? WHERE id = ?', [newChapterNumber.toFixed(2), id]);
+      }
+      
       // Embed de capítulo nuevo
       const embed = new EmbedBuilder()
       .setColor(0x2957ba)
       .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
       .setTitle(mangaTitle.length > 256 ? mangaTitle.slice(0, 253) + "..." : mangaTitle)
       .setImage(mangaImage)
-      .addFields(
-        { name: "📙 - Nuevo capítulo", value: `➜ ${newChapter}`, inline: true },
-      )
+      .setDescription(isFinished ? "Este manga ha finalizado su serialización en ZonaTMO. Ya no recibirás más notificaciones si llegase a haber un nuevo capítulo disponible." : null)
+      .addFields({ name: isFinished ? "📕 - Último capítulo" : "📙 - Nuevo capítulo", value: `➜ ${newChapter}`, inline: true })
+      .setFooter(isFinished ? { text: "No necesitas cancelar tu suscripción." } : null)
       
       // Botón para abrir en el navegador
       const actionRow = new ActionRowBuilder()
@@ -153,18 +139,16 @@ async function checkNewChapter(row, client, UrlCache) {
         .setStyle(ButtonStyle.Link),
       );
       
-      // Actualizar el último capítulo en la base de datos
-      await query('UPDATE mangasuscription SET lastChapter = ? WHERE id = ?', [newChapterNumber.toFixed(2), id]);
-      
       // Enviar un mensaje directo al usuario
       try {
         await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
+        console.log(`↪️  - Se encontró un nuevo capítulo disponible para ${mangaTitle}.`);
       } catch (error) {
         console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
         return;
       }
     }
   } catch (error) {
-    console.error(`Ha ocurrido un error al comprobar ${mangaTitle}: `, error.message);
+    console.error(`Ha ocurrido un error al comprobar ${mangaTitle}:`, error.message);
   }
 }
