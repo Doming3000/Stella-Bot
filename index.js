@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits, Collection, Partials } from "discord.js";
+import { startReminder } from "./services/holidayReminder.js";
 import { startScraping } from "./services/mangaScraping.js";
 import { testConnection } from "./database.js";
 import { pathToFileURL } from "url";
@@ -35,7 +36,8 @@ client.login(token).then(async () => {
   // Comprobar la conexión a la base de datos
   testConnection();
   
-  // Iniciar el servicio de web scraping para ZonaTMO
+  // Iniciar servicios
+  startReminder(client);
   startScraping(client);
 });
 
@@ -88,6 +90,5 @@ function loadEvents() {
   }
 }
 
-// Llamada a las funciones de carga
 loadCommands();
 loadEvents();

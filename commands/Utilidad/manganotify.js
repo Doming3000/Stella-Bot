@@ -4,30 +4,26 @@ import axios from "axios";
 
 export const data = new SlashCommandBuilder()
 .setName('manga-notify')
-.setDescription('Te suscribe a un servicio que te notificará cuando se publiquen capítulos en un manga de ZonaTMO.')
+.setDescription('Recibe notificaciones cuando se publiquen nuevos capítulos en un manga de ZonaTMO.')
 .addSubcommand(sub =>
-  sub
-  .setName('subscribe')
-  .setDescription('Te suscribe a un servicio que te notificará cuando se publiquen capítulos en un manga de ZonaTMO.')
+  sub.setName('subscribe')
+  .setDescription('Recibe notificaciones cuando se publiquen nuevos capítulos en un manga de ZonaTMO.')
   .addStringOption(opt =>
-    opt
-    .setName('manga-url')
+    opt.setName('manga-url')
     .setDescription('URL del manga. Ejemplo: https://zonatmo.com/library/manga/23741/dr-stone')
     .setRequired(true)
   )
 )
 .addSubcommand(sub =>
-  sub
-  .setName('unsubscribe')
+  sub.setName('unsubscribe')
   .setDescription('Cancela una o varias de tus suscripciones existentes.')
 )
 .addSubcommand(sub =>
-  sub
-  .setName('subscriptions')
+  sub.setName('subscriptions')
   .setDescription('Muestra tu lista de suscripciones activas.')
 );
 
-// Función para verificar si la URL es válida (para este contexto)
+// Comprobar si la URL es válida y si pertenece al sitio
 function isValidURL(url) {
   try {
     const parsedURL = new URL(url);
@@ -42,42 +38,37 @@ export async function run(client, interaction) {
   const subcommand = interaction.options.getSubcommand();
   const userID = interaction.user.id;
   
-  if (subcommand === 'subscribe' || 'unsubscribe') {
-    await interaction.reply({ content: "<:Advertencia:1302055825053057084> Este comando está temporalmente fuera de servicio.", allowedMentions: { repliedUser: false }});
-    return;
+  if (subcommand === 'subscribe' || subcommand === 'unsubscribe') {
+    return await interaction.reply({ content: "<:Advertencia:1302055825053057084> Este comando está temporalmente fuera de servicio.", allowedMentions: { repliedUser: false }});
   }
   
   if (subcommand === 'subscribe1') {
-    const url = interaction.options.getString('manga-url');
-    
-    // Verificar si el valor proporcionado es una URL válida.
-    if (!isValidURL(url)) {
-      await interaction.reply({ content: "<:Advertencia:1302055825053057084> Debes proporcionar una URL de ZonaTMO válida.\nEjemplo: `https://zonatmo.com/library/manga/23741/dr-stone`", flags: 64, allowedMentions: { repliedUser: false }});
-      return;
-    }
-    
-    // Comprobar si el manga es un oneshot por medio de la url
-    else if (url.includes('one_shot')) {
-      await interaction.reply({ content: "<:Advertencia:1302055825053057084> Este manga parece ser un **One Shot**. No puedes suscribirte a este tipo de mangas.", flags: 64, allowedMentions: { repliedUser: false }});
-      return;
-    }
-    
     try {
-      // Indicar que se está procesando la solicitud
+      const url = interaction.options.getString('manga-url');
+      
+      // Verificar si el valor proporcionado es una URL válida.
+      if (!isValidURL(url)) {
+        return await interaction.reply({ content: "<:Advertencia:1302055825053057084> Debes proporcionar una URL de ZonaTMO válida.\nEjemplo: `https://zonatmo.com/library/manga/23741/dr-stone`", flags: 64, allowedMentions: { repliedUser: false }});
+      }
+      
+      // Comprobar si el manga es un oneshot por medio de la url
+      else if (url.includes('one_shot')) {
+        return await interaction.reply({ content: "<:Advertencia:1302055825053057084> No puedes suscribirte a un manga tipo **One-Shot**.", flags: 64, allowedMentions: { repliedUser: false }});
+      }
+      
+      // A partir de aquí se procesan consultas, se debe indicar que se está procesando la solicitud
       await interaction.deferReply();
       
       // Verificar si la suscripción ya existe
       const existing = await query('SELECT * FROM mangasuscription WHERE userID = ? AND mangaUrl = ?', [userID, url]);
       if (existing.length > 0) {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ya estás suscrito a este manga.", allowedMentions: { repliedUser: false }});
-        return;
+        return await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Ya estás suscrito a este manga.", allowedMentions: { repliedUser: false }});
       }
       
-      // Limitar a 5 suscripciones por usuario (Ignorar al propietario)
+      // Limitar a 5 suscripciones por usuario, salvo para el desarrollador
       const subscriptions = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       if (subscriptions.length >= 5 && userID !== '811071747189112852') {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 5 suscripciones activas.", allowedMentions: { repliedUser: false }});
-        return;
+        return await interaction.editReply({ content: "<:Advertencia:1302055825053057084> Has alcanzado tu límite de 5 suscripciones activas.", allowedMentions: { repliedUser: false }});
       }
       
       // Simular un navegador real y obtener la información del manga
@@ -104,8 +95,7 @@ export async function run(client, interaction) {
       
       // Comprobar el estado del manga antes de registrar la suscripción
       else if (mangaStatus === 'Finalizado') {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No puedes suscribirte a un manga ya finalizado.", allowedMentions: { repliedUser: false }});
-        return;
+        return await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No puedes suscribirte a un manga ya finalizado.", allowedMentions: { repliedUser: false }});
       }
       
       // Registrar la suscripción
@@ -128,8 +118,7 @@ export async function run(client, interaction) {
       const result = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       
       if (result.length === 0) {
-        await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
-        return;
+        return await interaction.editReply({ content: "<:Advertencia:1302055825053057084> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
       }
       
       // Select menú con las suscripciones      
@@ -212,8 +201,7 @@ export async function run(client, interaction) {
       const result = await query('SELECT * FROM mangasuscription WHERE userID = ?', [userID]);
       
       if (result.length === 0) {
-        await interaction.editReply({ content: "<:Done:1326292171099345006> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
-        return;
+        return await interaction.editReply({ content: "<:Done:1326292171099345006> No tienes ninguna suscripción activa en este momento.", allowedMentions: { repliedUser: false }});
       }
       
       // Embed con las suscripciones

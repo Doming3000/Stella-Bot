@@ -47,7 +47,7 @@ async function webScraping(client) {
     
     console.log(`↪️  - Web scraping terminado. Se procesaron ${processed} mangas. La ejecución tardó ${(Date.now() - startTime) / 1000} segundos en completarse.`);
   } catch (error) {
-    console.error("No se pudo consultar la base de datos para el web scraping: ", error.message);
+    console.error("No se pudo consultar la base de datos para el web scraping:", error.message);
   }
 }
 
@@ -71,17 +71,23 @@ async function checkNewChapter(row, client, UrlCache) {
         UrlCache.set(mangaUrl, data);
         html = data;
       } catch (error) {
-        // Manejar sitio en mantenimiento
-        if (error.response?.status === 503) {
-          console.warn(`⚠️  - El sitio se encuentra actualmente en mantenimiento, no es posible continuar con el web scraping (503).`);
-          return 'stop';
-        }
-        
-        // Manejar exceso de peticiones
-        if (error.response?.status === 429) {
+        switch (error.response?.status ?? error.code) {
+          // Exceso de peticiones
+          case 429:
           console.warn(`⚠️  - Web scraping interrumpido por exceso de peticiones (429).`);
           return 'stop';
-        } else {
+          
+          // Sitio en mantenimiento
+          case 503:
+          console.warn(`⚠️  - El sitio se encuentra actualmente en mantenimiento, no es posible realizar el web scraping (503).`);
+          return 'stop';
+          
+          // Error de DNS
+          case 'ENOTFOUND':
+          console.warn(`⚠️  - No se ha podido encontrar la dirección DNS de la página (ENOTFOUND).`);
+          return 'stop';
+          
+          default:
           throw error;
         }
       }
@@ -97,14 +103,14 @@ async function checkNewChapter(row, client, UrlCache) {
     
     // Último capítulo disponible
     const chapterMatch = html.match(/Cap[ií]tulo\s+[\d.]+(?:\s+[^\n<]+)*/i);
-    let newChapter = null;
-    let newChapterNumber = null;
+    const newChapter = chapterMatch ? chapterMatch[0].trim() : null;
     
-    // Extraer el nombre del capítulo y el número
-    if (chapterMatch) {
-      newChapter = chapterMatch[0].trim();
-      const numMatch = newChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
-      newChapterNumber = numMatch ? parseFloat(numMatch[1]) : null;
+    // Número del capítulo
+    const numMatch = newChapter.match(/Cap[ií]tulo\s+([\d.]+)/i);
+    const newChapterNumber = numMatch ? parseFloat(numMatch[1]) : null;
+    
+    if ([mangaImage, mangaStatus, newChapter, newChapterNumber].some(v => v === null)) {
+      return console.warn(`⚠️  - No se pudo obtener toda la información del manga: ${mangaTitle}.`);
     }
     
     // Comprobar si hay un nuevo capítulo
@@ -125,7 +131,7 @@ async function checkNewChapter(row, client, UrlCache) {
       .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
       .setTitle(mangaTitle.length > 256 ? mangaTitle.slice(0, 253) + "..." : mangaTitle)
       .setImage(mangaImage)
-      .setDescription(isFinished ? "Este manga ha finalizado su serialización en ZonaTMO. Ya no recibirás más notificaciones si llegase a haber un nuevo capítulo disponible." : null)
+      .setDescription(isFinished ? "Este manga ha finalizado su serialización en ZonaTMO. En caso de haber otro capítulo disponible, no recibirás una notificación." : null)
       .addFields({ name: isFinished ? "📕 - Último capítulo" : "📙 - Nuevo capítulo", value: `➜ ${newChapter}`, inline: true })
       .setFooter(isFinished ? { text: "No necesitas cancelar tu suscripción." } : null)
       
@@ -142,10 +148,9 @@ async function checkNewChapter(row, client, UrlCache) {
       // Enviar un mensaje directo al usuario
       try {
         await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
-        console.log(`↪️  - Se encontró un nuevo capítulo disponible para ${mangaTitle}.`);
+        console.log(`✅  - Se encontró un nuevo capítulo disponible para ${mangaTitle}.`);
       } catch (error) {
         console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
-        return;
       }
     }
   } catch (error) {
