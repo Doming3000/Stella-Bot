@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
-import { joinVoiceChannel } from "@discordjs/voice";
+import { joinVoiceChannel, getVoiceConnection } from "@discordjs/voice";
 
 export const data = new SlashCommandBuilder()
 .setName('music')
@@ -24,62 +24,42 @@ export async function run(client, interaction) {
   
   // Comprobar si el usuario está conectado en un canal de voz
   if (!voiceChannel) {
-    return interaction.reply({ content: '<:Advertencia:1302055825053057084> Debes estar conectado en un canal de voz para usar este comando.', flags: 64, allowedMentions: { repliedUser: false }});
+    return interaction.reply({ content: '<:Advertencia:1302055825053057084> Debes estar conectado en un canal de voz.', flags: 64, allowedMentions: { repliedUser: false }});
   }
-  // Crear el grupo de conexiones
-  if (!client.voiceConnections) client.voiceConnections = new Map();
   
-  client.on('voiceStateUpdate', (oldState, newState) => {
-    if (oldState.id !== client.user.id) return;
-    
-    const guildId = oldState.guild.id;
-    const wasInVoice = oldState.channelId;
-    const isInVoice = newState.channelId;
-    
-    if (wasInVoice && !isInVoice) {
-      const connection = client.voiceConnections?.get(guildId);
-      if (connection) {
-        connection.destroy();
-        client.voiceConnections.delete(guildId);
-      }
-    }
-  })
+  // Obtener la conexión de voz actual del servidor (si existe)
+  const existingConnection = getVoiceConnection(interaction.guild.id);
   
   if (subcommand === 'play') {
-    if (client.voiceConnections.has(interaction.guild.id)) {
+    if (existingConnection) {
       return interaction.reply({ content: '<:Advertencia:1302055825053057084> Ya estoy conectada en un canal de voz.', flags: 64, allowedMentions: { repliedUser: false }});
-    }
-    
-    // Indicar que se está procesando la solicitud
-    await interaction.deferReply();
+    } 
     
     // Crear la conexión de voz
-    const connection = joinVoiceChannel({
+    await interaction.deferReply();
+    
+    joinVoiceChannel({
       channelId: voiceChannel.id,
       guildId: voiceChannel.guild.id,
       adapterCreator: voiceChannel.guild.voiceAdapterCreator
     });
     
-    // Guardar conexión usando ID del servidor y confirmar la interacción
-    client.voiceConnections.set(interaction.guild.id, connection);
-    
+    // Confirmar la interacción
     const reply = await interaction.editReply({ content: `<:Done:1326292171099345006> Conectada a <#${voiceChannel.id}>.`, allowedMentions: { repliedUser: false }});
     setTimeout(() => reply.delete(), 5000);
   }
   
   if (subcommand === 'leave') {
-    const connection = client.voiceConnections.get(interaction.guild.id);
-    const botChannel = connection.joinConfig.channelId;
+    const botChannelId = existingConnection.joinConfig.channelId;
     
-    if (!connection) {
+    if (!existingConnection) {
       return interaction.reply({ content: '<:Advertencia:1302055825053057084> No estoy conectada en ningún canal de voz.', flags: 64, allowedMentions: { repliedUser: false }});
-    } else if (botChannel !== voiceChannel.id && !interaction.member.permissions.has(PermissionFlagsBits.MoveMembers)) {
+    } else if (botChannelId !== voiceChannel.id && !interaction.member.permissions.has(PermissionFlagsBits.MoveMembers)) {
       return interaction.reply({ content: '<:Advertencia:1302055825053057084> No puedes desconectarme de otro canal de voz.', flags: 64, allowedMentions: { repliedUser: false }});
     }
     
     // Desconectar del canal y confirmar la interacción
-    connection.destroy();
-    client.voiceConnections.delete(interaction.guild.id);
+    existingConnection.destroy();
     
     const reply = await interaction.reply({ content: `<:Done:1326292171099345006> Desconectada de <#${voiceChannel.id}>.`, flags: 64, allowedMentions: { repliedUser: false }});
     setTimeout(() => reply.delete(), 5000);
