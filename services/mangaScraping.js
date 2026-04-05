@@ -38,7 +38,7 @@ async function webScraping(client) {
       // Salir del bucle si se para el scraping
       if (status === 'stop') break;
       
-      // Crear un delay entre peticiones
+      // Crear un delay de 1.5 a 2.5 segundos entre peticiones
       const delay = 1500 + Math.random() * 2000; 
       await new Promise(resolve => setTimeout(resolve, delay));
       
@@ -79,7 +79,7 @@ async function checkNewChapter(row, client, UrlCache) {
           
           // Sitio en mantenimiento
           case 503:
-          console.warn(`⚠️  - El sitio se encuentra actualmente en mantenimiento, no es posible realizar el web scraping (503).`);
+          console.warn(`⚠️  - El sitio se encuentra actualmente en mantenimiento, no es posible realizar web scraping (503).`);
           return 'stop';
           
           // Error de DNS
@@ -131,7 +131,7 @@ async function checkNewChapter(row, client, UrlCache) {
       .setAuthor({ name: `${client.user.username}`, iconURL: client.user.displayAvatarURL()})
       .setTitle(mangaTitle.length > 256 ? mangaTitle.slice(0, 253) + "..." : mangaTitle)
       .setImage(mangaImage)
-      .setDescription(isFinished ? "Este manga ha finalizado su serialización en ZonaTMO. En caso de haber otro capítulo disponible, no recibirás una notificación." : null)
+      .setDescription(isFinished ? "Este manga ha finalizado su serialización en ZonaTMO. En caso de haber algún otro capítulo disponible, no recibirás una notificación." : null)
       .addFields({ name: isFinished ? "📕 - Último capítulo" : "📙 - Nuevo capítulo", value: `➜ ${newChapter}`, inline: true })
       .setFooter(isFinished ? { text: "No necesitas cancelar tu suscripción." } : null)
       
@@ -148,7 +148,7 @@ async function checkNewChapter(row, client, UrlCache) {
       // Enviar un mensaje directo al usuario
       try {
         await user.send({ content: `<:Info:1345848332760907807> ¡Hay un nuevo capítulo disponible para **${mangaTitle}**!`, embeds: [embed], components: [actionRow], allowedMentions: { repliedUser: false }});  
-        console.log(`✅  - Se encontró un nuevo capítulo disponible para ${mangaTitle}.`);
+        console.log(`✅  - Se encontró un nuevo capítulo para ${mangaTitle}.`);
       } catch (error) {
         console.log(`⚠️  - No se pudo enviar el mensaje directo a ${user.username} | ${user.tag}.`);
       }
