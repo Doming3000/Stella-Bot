@@ -1,8 +1,8 @@
-import { joinVoiceChannel, getVoiceConnection } from "@discordjs/voice";
+import { getVoiceConnection } from "@discordjs/voice";
 
 export function voiceStateUpdate(client) {
   client.on("voiceStateUpdate", (oldState, newState) => {
-    // Solo nos interesa reaccionar a los cambios de estado del propio bot
+    // Ignorar actualizaciones que no involucren al bot
     if (newState.member.id !== client.user.id) return;
     
     const guildId = newState.guild.id;
@@ -21,11 +21,8 @@ export function voiceStateUpdate(client) {
     
     // Escenario 2: Bot movido a otro canal
     if (oldChannel && newChannel && oldChannel.id !== newChannel.id) {    
-      // Destruir la conexión previa
-      connection.destroy();
-      
       // Crear una nueva conexión en el nuevo canal
-      joinVoiceChannel({
+      connection.rejoin({
         channelId: newChannel.id,
         guildId: newChannel.guild.id,
         adapterCreator: newChannel.guild.voiceAdapterCreator

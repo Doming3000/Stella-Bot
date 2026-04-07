@@ -1,11 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { query } from "../database.js";
 import cron from "node-cron";
-import dotenv from 'dotenv';
 import axios from "axios";
-
-// Cargar variables de entorno
-dotenv.config();
 
 // Función para iniciar el scraping programado
 export function startScraping(client) {
